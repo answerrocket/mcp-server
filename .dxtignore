@@ -178,3 +178,12 @@ Makefile
 
 # Build script (not needed)
 build_dxt.py
+
+lib
+mcp_server
+scripts
+install.sh
+bootstrap.sh
+.python-version
+pyproject.toml
+uv.lock
