@@ -1,0 +1,63 @@
+{
+  "dxt_version": "0.1",
+  "name": "Max MCP",
+  "version": "0.1.0",
+  "description": "MCP that connects to Max AI agents",
+  "author": {
+    "name": "AnswerRocket",
+    "url": "https://answerrocket.com/"
+  },
+  "homepage": "https://answerrocket.com/",
+  "documentation": "https://answerrocket.com/",
+  "support": "https://answerrocket.com/",
+  "icon": "max.png",
+  "server": {
+    "type": "python",
+    "entry_point": "server/main.py",
+    "mcp_config": {
+      "command": "${__dirname}/.venv/bin/python",
+      "args": [
+        "${__dirname}/server/main.py"
+      ],
+      "env": {
+        "PYTHONPATH": "${__dirname}/.venv",
+        "AR_URL": "${user_config.AR_URL}",
+        "AR_TOKEN": "${user_config.AR_TOKEN}",
+        "COPILOT_ID": "${user_config.COPILOT_ID}"
+      }
+    }
+  },
+  "user_config": {
+    "AR_URL": {
+      "type": "string",
+      "title": "URL of the Max instance",
+      "description": "URL of the Max instance",
+      "required": true,
+      "sensitive": false
+    },
+    "AR_TOKEN": {
+      "type": "string",
+      "title": "SDK API key associated with your account",
+      "description": "SDK API key associated with your account",
+      "required": true,
+      "sensitive": true
+    },
+    "COPILOT_ID": {
+      "type": "string",
+      "title": "Agent Id",
+      "description": "Agent Id",
+      "required": true,
+      "sensitive": false
+    }
+  },
+  "keywords": [
+    "answerrocket",
+    "max",
+    "data"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/answerrocket/mcp-server"
+  }
+}
