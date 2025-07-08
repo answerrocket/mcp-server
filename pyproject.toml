@@ -11,11 +11,11 @@ dependencies = [
 dynamic = ["version"]
 
 [tool.setuptools]
-packages = ["server"]
+packages = ["mcp_server"]
 
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = { attr = "mcp-server.__version__" }
+version = { attr = "mcp_server.src.__version__" }
