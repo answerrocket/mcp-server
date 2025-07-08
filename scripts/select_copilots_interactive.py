@@ -31,8 +31,7 @@ class CursesCopilotSelector:
         for copilot in copilots:
             searchable = " ".join([
                 copilot.get('name', '').lower(),
-                copilot.get('description', '').lower(),
-                " ".join(skill.get('name', '').lower() for skill in copilot.get('skills', []))
+                copilot.get('description', '').lower()
             ])
             self.searchable_texts.append(searchable)
     
@@ -97,7 +96,7 @@ class CursesCopilotSelector:
                 
                 # Format
                 name = copilot.get('name', 'Unknown')
-                skill_count = len(copilot.get('skills', []))
+                skill_count = copilot.get('skill_count', 0) # Use skill_count from JSON
                 skill_text = f"{skill_count} skill{'s' if skill_count != 1 else ''}"
                 
                 # Selection indicators
@@ -243,7 +242,7 @@ class CursesCopilotSelector:
         print("\n=== Fallback Selection Mode ===", file=sys.stderr)
         for idx, copilot in enumerate(self.copilots[:10]):
             name = copilot.get('name', 'Unknown')
-            skills = len(copilot.get('skills', []))
+            skills = copilot.get('skill_count', 0) # Use skill_count from JSON
             print(f"{idx + 1}. {name} ({skills} skills)", file=sys.stderr)
         
         print("\nEnter numbers (comma-separated):", file=sys.stderr)

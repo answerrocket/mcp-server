@@ -36,36 +36,15 @@ def main():
             print("Error: No copilots found", file=sys.stderr)
             sys.exit(1)
         
-        # Extract copilot metadata
+        # Extract basic copilot metadata (without detailed skill enumeration)
         copilot_list = []
-        for copilot in copilots:
+        for copilot in copilots:            
             copilot_data = {
-                "copilot_id": copilot.copilot_id,
+                "copilot_id": str(copilot.copilot_id),
                 "name": copilot.name,
                 "description": copilot.description,
-                "skill_ids": copilot.copilot_skill_ids or []
+                "skill_count": len(copilot.copilot_skill_ids)
             }
-            
-            # Get skill details for each copilot
-            skills = []
-            for skill_id in copilot.copilot_skill_ids or []:
-                try:
-                    skill_info = ar_client.config.get_copilot_skill(True, copilot.copilot_id, skill_id)
-                    if skill_info:
-                        skills.append({
-                            "skill_id": skill_info.copilot_skill_id,
-                            "name": skill_info.name,
-                            "detailed_name": skill_info.detailed_name,
-                            "description": skill_info.description,
-                            "detailed_description": skill_info.detailed_description,
-                            "skill_type": skill_info.copilot_skill_type,
-                            "dataset_id": skill_info.dataset_id,
-                            "scheduling_only": skill_info.scheduling_only
-                        })
-                except Exception as e:
-                    print(f"Warning: Could not get skill {skill_id} details: {e}", file=sys.stderr)
-            
-            copilot_data["skills"] = skills
             copilot_list.append(copilot_data)
         
         # Output as JSON
