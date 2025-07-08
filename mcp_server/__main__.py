@@ -2,7 +2,7 @@
 
 import sys
 import os
-from server import create_server
+from .server import create_server
 
 # Global MCP server instance
 mcp = None

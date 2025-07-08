@@ -9,7 +9,7 @@ from answer_rocket.client import AnswerRocketClient
 from answer_rocket.graphql.schema import MaxCopilot, MaxCopilotSkill
 from mcp.types import ToolAnnotations
 
-from models import SkillConfig, SkillParameter
+from .models import SkillConfig, SkillParameter
 
 
 def validate_environment() -> Tuple[str, str, str]:
