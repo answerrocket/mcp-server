@@ -3,7 +3,7 @@
 set -e
 
 # Configuration
-GITHUB_REPO="AnswerrocketKW/mcp-test"
+GITHUB_REPO="answerrocket/mcp-server"
 GITHUB_BRANCH="main"
 
 # Colors for output
