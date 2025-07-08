@@ -22,6 +22,7 @@ install_uv() {
             curl -LsSf https://astral.sh/uv/install.sh | sh
             # Add uv to PATH for current session
             export PATH="$HOME/.cargo/bin:$PATH"
+            source $HOME/.local/bin/env
             ;;
         windows)
             log_info "Installing uv for Windows..."
