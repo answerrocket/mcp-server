@@ -19,3 +19,6 @@ exclude = ["lib*", "scripts*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "mcp_server.__version__" }
+
+[project.scripts]
+maxai-mcp = "mcp_server.__main__:main"

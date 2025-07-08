@@ -13,14 +13,11 @@
   "icon": "max.png",
   "server": {
     "type": "python",
-    "entry_point": "server/main.py",
+    "entry_point": "python",
     "mcp_config": {
-      "command": "${__dirname}/.venv/bin/python",
-      "args": [
-        "${__dirname}/server/main.py"
-      ],
+      "command": "uvx",
+      "args": ["maxai-mcp"],
       "env": {
-        "PYTHONPATH": "${__dirname}/.venv",
         "AR_URL": "${user_config.AR_URL}",
         "AR_TOKEN": "${user_config.AR_TOKEN}",
         "COPILOT_ID": "${user_config.COPILOT_ID}"
