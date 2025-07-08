@@ -1,5 +1,5 @@
 [project]
-name = "mcp-server"
+name = "maxai-mcp"
 description = "MCP server that connects to Max AI agents"
 readme = "README.md"
 requires-python = ">=3.10.7"
