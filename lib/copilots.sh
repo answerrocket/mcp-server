@@ -108,7 +108,7 @@ install_mcp_servers() {
             local safe_copilot_name=$(echo "$copilot_name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
             local server_name="${safe_copilot_name}-Assistant"
             
-            if uv run mcp install server/main.py -n "$server_name" -v "AR_URL=$ar_url" -v "AR_TOKEN=$ar_token" -v "COPILOT_ID=$copilot_id" --with "answerrocket-client" --with "fastmcp" ; then
+            if uv run mcp install mcp_server/src/main.py -n "$server_name" -v "AR_URL=$ar_url" -v "AR_TOKEN=$ar_token" -v "COPILOT_ID=$copilot_id" --with "answerrocket-client" --with "fastmcp" ; then
                 log_success "Installed MCP server: $server_name"
                 installed_servers+=("$server_name ($copilot_name)")
             else

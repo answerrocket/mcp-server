@@ -39,4 +39,5 @@ def main():
         print("Starting MCP server...", file=sys.stderr)
         server.run()
 
-main()
+if __name__ == "__main__":
+    main()
