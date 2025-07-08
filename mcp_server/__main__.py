@@ -2,7 +2,7 @@
 
 import sys
 import os
-from mcp_server import create_server
+from .server import create_server
 
 # Global MCP server instance
 mcp = None
@@ -39,4 +39,5 @@ def main():
         print("Starting MCP server...", file=sys.stderr)
         server.run()
 
-main()
+if __name__ == "__main__":
+    main()

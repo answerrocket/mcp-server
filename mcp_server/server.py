@@ -8,8 +8,8 @@ from fastmcp.tools.tool import Tool
 from answer_rocket.client import AnswerRocketClient
 from answer_rocket.graphql.schema import MaxCopilot
 
-from models import SkillConfig
-from utils import (
+from .models import SkillConfig
+from .utils import (
     validate_environment,
     create_client,
     get_copilot_info,

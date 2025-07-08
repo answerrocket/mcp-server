@@ -1,18 +1,24 @@
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "mcp-server-demo"
-version = "0.1.0"
+name = "maxai-mcp"
 description = "MCP server that connects to Max AI agents"
 readme = "README.md"
 requires-python = ">=3.10.7"
+dynamic = ["version"]
 dependencies = [
     "fastmcp>=2.10.0",
     "answerrocket-client>=0.2.59",
     "mcp[cli]>=1.10.1",
 ]
 
-[tool.setuptools]
-packages = ["server"]
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["lib*", "scripts*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "mcp_server.__version__" }
+
+[project.scripts]
+maxai-mcp = "mcp_server.__main__:main"
