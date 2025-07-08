@@ -79,7 +79,7 @@ setup_python_env() {
     
     # Create virtual environment with uv in server/venv
     log_info "Creating virtual environment..."
-    uv venv server/venv --python "$python_version"
+    uv venv --python "$python_version"
     
     log_success "Virtual environment created with Python $python_version"
     
@@ -93,6 +93,6 @@ setup_python_env() {
     
     # Install answerrocket-client from git repository
     log_info "Installing answerrocket-client from git repository..."
-    uv add "git+ssh://git@github.com/answerrocket/answerrocket-python-client.git@get-copilots-for-mcp"
+    uv add "answerrocket-python-client"
     log_success "AnswerRocket client installed from git repository"
 } 

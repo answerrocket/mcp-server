@@ -16,7 +16,3 @@ dependencies = [
 
 [tool.setuptools]
 packages = ["server"]
-
-[tool.uv.sources]
-answerrocket-client = { git = "ssh://git@github.com/answerrocket/answerrocket-python-client.git", rev = "get-copilots-for-mcp" }
-
