@@ -1,7 +1,7 @@
 {
   "dxt_version": "0.1",
   "name": "Max MCP",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "MCP that connects to Max AI agents",
   "author": {
     "name": "AnswerRocket",
