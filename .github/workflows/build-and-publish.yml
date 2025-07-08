@@ -86,3 +86,24 @@ jobs:
           path: dist/
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build-dxt
+    steps:
+      - name: Download DXT artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dxt-dist
+          path: ./
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.dxt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
