@@ -3,19 +3,16 @@ name = "mcp-server"
 description = "MCP server that connects to Max AI agents"
 readme = "README.md"
 requires-python = ">=3.10.7"
+dynamic = ["version"]
 dependencies = [
     "fastmcp>=2.10.0",
     "answerrocket-client>=0.2.59",
     "mcp[cli]>=1.10.1",
 ]
-dynamic = ["version"]
-
-[tool.setuptools]
-packages = ["mcp_server"]
 
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = { attr = "mcp_server.src.__version__" }
+version = { attr = "mcp_server.__version__" }
