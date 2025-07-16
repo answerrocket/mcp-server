@@ -20,13 +20,13 @@ def validate_environment() -> Tuple[str, str, str]:
     copilot_id = os.getenv("COPILOT_ID")
     
     if not ar_url:
-        print("Error: AR_URL environment variable is required", file=sys.stderr)
+        print("Error: AR_URL environment variable is required")
         sys.exit(1)
     if not ar_token:
-        print("Error: AR_TOKEN environment variable is required", file=sys.stderr)
+        print("Error: AR_TOKEN environment variable is required")
         sys.exit(1)
     if not copilot_id:
-        print("Error: COPILOT_ID environment variable is required", file=sys.stderr)
+        print("Error: COPILOT_ID environment variable is required")
         sys.exit(1)
         
     return ar_url, ar_token, copilot_id
@@ -34,15 +34,13 @@ def validate_environment() -> Tuple[str, str, str]:
 
 def create_client(ar_url: str, ar_token: str) -> AnswerRocketClient:
     """Create and validate AnswerRocket client."""
-    print(f"Creating client for URL: {ar_url}", file=sys.stderr)
     client = AnswerRocketClient(ar_url, ar_token)
     
     if not client.can_connect():
-        print(f"Error: Cannot connect to AnswerRocket at {ar_url}", file=sys.stderr)
-        print("Please check your AR_URL and AR_TOKEN", file=sys.stderr)
+        print(f"Error: Cannot connect to AnswerRocket at {ar_url}")
+        print("Please check your AR_URL and AR_TOKEN")
         sys.exit(1)
         
-    print("Client connected successfully", file=sys.stderr)
     return client
 
 
@@ -59,7 +57,7 @@ def get_copilot_info(client: AnswerRocketClient, copilot_id: str) -> Optional[Ma
         
         return copilot_info
     except Exception as e:
-        print(f"Error getting copilot info: {e}", file=sys.stderr)
+        print(f"Error getting copilot info: {e}")
         # Fallback to None
         return None
 
@@ -89,24 +87,20 @@ async def fetch_skill_info(client: AnswerRocketClient, copilot_id: str, skill_id
         )
         return skill_info
     except Exception as e:
-        print(f"❌ Error fetching skill {skill_id}: {e}", file=sys.stderr)
+        print(f"❌ Error fetching skill {skill_id}: {e}")
         return None
 
 
 async def build_skill_configs_async(copilot: MaxCopilot, client: AnswerRocketClient) -> List[SkillConfig]:
     """Build skill configurations for all skills in a copilot."""
-    print(f"Building skill configs for copilot: {copilot.name}", file=sys.stderr)
-    
+
     if not copilot.copilot_skill_ids:
-        print("No skill IDs found for copilot", file=sys.stderr)
         return []
         
     # Convert skill IDs to list
     skill_ids = copilot.copilot_skill_ids
     if not isinstance(skill_ids, list):
         skill_ids = [skill_ids] if skill_ids else []
-    print(skill_ids, file=sys.stderr)
-    print(f"Fetching {len(skill_ids)} skills...", file=sys.stderr)
     
     # Fetch all skill info in parallel
     skill_infos = await asyncio.gather(*[
@@ -125,7 +119,6 @@ async def build_skill_configs_async(copilot: MaxCopilot, client: AnswerRocketCli
             )
             skill_configs.append(skill_config)
             
-    print(f"Created {len(skill_configs)} skill configurations", file=sys.stderr)
     return skill_configs
 
 

@@ -35,7 +35,6 @@ class AnswerRocketMCPServer:
         
     def initialize(self) -> FastMCP:
         """Initialize the MCP server."""
-        print(f"Initializing MCP server for copilot: {self.copilot_id}", file=sys.stderr)
         
         # Create client and fetch copilot
         self.client = create_client(self.ar_url, self.ar_token)
@@ -47,13 +46,11 @@ class AnswerRocketMCPServer:
         
         # Get copilot name for server
         copilot_name = str(self.copilot.name) if self.copilot.name else self.copilot_id
-        print(f"Copilot name: {copilot_name}", file=sys.stderr)
             
-
          # Create token verifier for introspection with RFC 8707 resource validation
         token_verifier = IntrospectionTokenVerifier(
             introspection_endpoint=f"{self.ar_url}/api/oauth2/introspect",
-            server_url=self.ar_url,
+            server_url="http://localhost:9090",
             validate_resource=True, 
         )
 
@@ -74,12 +71,9 @@ class AnswerRocketMCPServer:
         )
         
         # Build skill configurations
-        print("Building skill configurations", file=sys.stderr)
         self.skill_configs = build_skill_configs(self.copilot, self.client)
-        print(f"Built {len(self.skill_configs)} skill configurations", file=sys.stderr)
         
         # Register tools
-        print("Registering tools", file=sys.stderr)
         self._register_tools()
         
         # Add get_skill_description tool
@@ -109,25 +103,9 @@ class AnswerRocketMCPServer:
                 description=skill_config.detailed_description,
                 annotations=annotations
             )
-            
-            # Log parameter info
-            param_count = len(skill_config.parameters)
-            param_info = f" with {param_count} parameters" if param_count > 0 else ""
-            print(f"Created tool for skill: {skill_config.skill_name} ({skill_config.tool_name}){param_info}", 
-                  file=sys.stderr)
-            
-            if param_count > 0:
-                for param in skill_config.parameters:
-                    required_text = 'required' if param.required else 'optional'
-                    constrained_text = f" [{', '.join(param.constrained_values)}]" if param.constrained_values else ""
-                    print(f"   - {param.name}: {param.type_hint.__name__} ({required_text}){constrained_text}", 
-                          file=sys.stderr)
-            
             return True
         except Exception as e:
-            import traceback
-            print(traceback.format_exc(), file=sys.stderr)
-            print(f"❌ Error registering tool for skill {skill_config.skill_name}: {e}", file=sys.stderr)
+
             return False
     
     def _register_tools(self):
@@ -138,8 +116,6 @@ class AnswerRocketMCPServer:
                 for skill_config in self.skill_configs
             ])
             success_count = sum(1 for result in results if result)
-            print(f"Successfully initialized {success_count}/{len(self.skill_configs)} skill tools", 
-                  file=sys.stderr)
         
         asyncio.run(register_all())
     
@@ -165,7 +141,6 @@ class AnswerRocketMCPServer:
             except Exception as e:
                 error_msg = f"Error getting skill description for {skill_id}: {e}"
                 await context.error(error_msg)
-                print(error_msg, file=sys.stderr)
                 return None
         
         # Add tool directly to MCP
@@ -179,7 +154,6 @@ class AnswerRocketMCPServer:
 
 def create_server() -> FastMCP:
     """Create and initialize the MCP server."""
-    print("Creating MCP server", file=sys.stderr)
     ar_url, ar_token, copilot_id = validate_environment()
     server = AnswerRocketMCPServer(ar_url, ar_token, copilot_id)
     return server.initialize()

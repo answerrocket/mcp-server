@@ -25,8 +25,8 @@ class IntrospectionTokenVerifier(TokenVerifier):
         server_url: str,
         validate_resource: bool = False,
     ):
-        self.introspection_endpoint = introspection_endpoint
-        self.server_url = server_url
+        self.introspection_endpoint = introspection_endpoint.rstrip("/")
+        self.server_url = server_url.rstrip("/")
         self.validate_resource = validate_resource
         self.resource_url = resource_url_from_server_url(server_url)
 
@@ -76,6 +76,8 @@ class IntrospectionTokenVerifier(TokenVerifier):
                     resource=data.get("aud"),  # Include resource in token
                 )
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 logger.warning(f"Token introspection failed: {e}")
                 return None
 
@@ -88,11 +90,11 @@ class IntrospectionTokenVerifier(TokenVerifier):
         aud = token_data.get("aud")
         if isinstance(aud, list):
             for audience in aud:
-                if self._is_valid_resource(audience):
+                if self._is_valid_resource(audience.rstrip("/")):
                     return True
             return False
         elif aud:
-            return self._is_valid_resource(aud)
+            return self._is_valid_resource(aud.rstrip("/"))
 
         # No resource binding - invalid per RFC 8707
         return False

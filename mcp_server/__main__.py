@@ -12,8 +12,6 @@ def initialize_server():
     """Initialize the global MCP server."""
     global mcp
     
-    print("Testing AnswerRocket MCP server setup...", file=sys.stderr)
-    
     # Check environment variables
     ar_url = os.getenv("AR_URL")
     ar_token = os.getenv("AR_TOKEN")
@@ -38,7 +36,6 @@ def main():
     server = initialize_server()
     transport = cast(Literal["stdio", "sse", "streamable-http"], os.getenv("MCP_TRANSPORT", "stdio"))
     if server:
-        print("Starting MCP server...", file=sys.stderr)
         server.run(transport=transport)
 
 if __name__ == "__main__":
