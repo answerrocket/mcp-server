@@ -36,27 +36,10 @@ def initialize_server():
 def main():
     """Main entry point when running as a script."""
     server = initialize_server()
+    transport = cast(Literal["stdio", "sse", "streamable-http"], os.getenv("MCP_TRANSPORT", "stdio"))
     if server:
         print("Starting MCP server...", file=sys.stderr)
-        
-        transport_env = os.getenv("MCP_TRANSPORT", "stdio")
-        port = int(os.getenv("MCP_PORT", "8000"))
-        host = os.getenv("MCP_HOST", "127.0.0.1")
-        
-        valid_transports = ["stdio", "sse", "streamable-http"]
-        if transport_env not in valid_transports:
-            transport = cast(Literal["stdio", "sse", "streamable-http"], "stdio")
-        else:
-            transport = cast(Literal["stdio", "sse", "streamable-http"], transport_env)
-        
-        if transport == "stdio":
-            server.run()
-        else:
-            server.run(
-                transport=transport,
-                port=port,
-                host=host
-            )
+        server.run(transport=transport)
 
 if __name__ == "__main__":
     main()

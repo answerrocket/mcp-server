@@ -8,8 +8,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from answer_rocket.client import AnswerRocketClient
 from answer_rocket.graphql.schema import MaxCopilot, MaxCopilotSkill
 from mcp.types import ToolAnnotations
+from mcp.server.fastmcp.server import Context
 
-from .models import SkillConfig, SkillParameter
+from mcp_server.models import SkillConfig, SkillParameter
 
 
 def validate_environment() -> Tuple[str, str, str]:
@@ -157,9 +158,11 @@ def create_skill_tool_function(
     """Create a tool function for a skill with proper signature."""
     skill_parameters = skill_config.get_parameters_dict()
     
-    async def skill_tool_function(**kwargs):
+    async def skill_tool_function(context: Context, **kwargs):
         """Execute this AnswerRocket skill."""
         try:
+            await context.info(f"Executing skill: {skill_config.skill_name}")
+            
             # Validate and transform parameters
             processed_params = {}
             for param_name, param_info in skill_parameters.items():
@@ -170,31 +173,42 @@ def create_skill_tool_function(
                         continue
                     processed_params[param_name] = value
                 elif param_info.get('required', False):
+                    error_msg = f"Required parameter '{param_name}' not provided"
+                    await context.error(error_msg)
                     return {
                         "success": False,
-                        "error": f"Required parameter '{param_name}' not provided",
+                        "error": error_msg,
                         "skill_name": skill_config.skill_name,
                         "skill_id": skill_config.skill_id
                     }
             
+            if processed_params:
+                await context.debug(f"Using parameters: {processed_params}")
+            
             # Create AnswerRocket client
+            await context.info("Connecting to AnswerRocket...")
             ar_client = AnswerRocketClient(ar_url, ar_token)
             if not ar_client.can_connect():
                 raise ValueError("Cannot connect to AnswerRocket")
             
             # Run the skill with processed parameters
+            await context.info("Running skill...")
             skill_result = ar_client.skill.run(copilot_id, skill_config.skill_name, processed_params)
             
             if not skill_result.success:
+                await context.error(f"Skill execution failed: {skill_result.error}")
                 return skill_result.error
 
+            await context.info("Skill executed successfully")
             
             if skill_result.data is not None:
                 return skill_result.data.get("final_message", "")
             else:
                 return "No data returned from skill"
         except Exception as e:
-            return f"Error running skill {skill_config.skill_name}: {str(e)}"
+            error_msg = f"Error running skill {skill_config.skill_name}: {str(e)}"
+            await context.error(error_msg)
+            return error_msg
     
     # Set function metadata
     skill_tool_function.__name__ = f"skill_{skill_config.tool_name}"
@@ -203,6 +217,16 @@ def create_skill_tool_function(
     # Add parameter annotations for better MCP integration
     sig_params = []
     annotations = {}
+    
+    # Add context parameter first
+    sig_params.append(
+        inspect.Parameter(
+            "context",
+            inspect.Parameter.KEYWORD_ONLY,
+            annotation=Context
+        )
+    )
+    annotations["context"] = Context
     
     for param in skill_config.parameters:
         is_required = param.required
@@ -227,7 +251,7 @@ def create_skill_tool_function(
     except Exception as e:
         # Fallback to no signature
         skill_tool_function.__signature__ = None
-        skill_tool_function.__annotations__ = {}
+        skill_tool_function.__annotations__ = {"context": Context}
     
     return skill_tool_function
 

@@ -12,14 +12,14 @@ from mcp.server import FastMCP
 from mcp.server.auth.settings import AuthSettings
 from mcp_server.models import SkillConfig
 from mcp_server.utils import (
-    validate_environment,
-    create_client,
-    get_copilot_info,
     build_skill_configs,
+    create_client,
+    create_skill_tool_function,
     create_tool_annotations,
-    create_skill_tool_function
+    get_copilot_info,
+    validate_environment,
 )
-
+import os
 
 class AnswerRocketMCPServer:
     """MCP Server for AnswerRocket copilots."""
@@ -49,23 +49,28 @@ class AnswerRocketMCPServer:
         copilot_name = str(self.copilot.name) if self.copilot.name else self.copilot_id
         print(f"Copilot name: {copilot_name}", file=sys.stderr)
             
+
          # Create token verifier for introspection with RFC 8707 resource validation
         token_verifier = IntrospectionTokenVerifier(
-            introspection_endpoint=f"{self.ar_url}/api/oauth/introspect",
+            introspection_endpoint=f"{self.ar_url}/api/oauth2/introspect",
             server_url=self.ar_url,
             validate_resource=True, 
         )
+
+        port = int(os.getenv("MCP_PORT", "8000"))
+        host = os.getenv("MCP_HOST", "127.0.0.1")
+        
         # Initialize MCP with copilot name
         self.mcp = FastMCP(
             copilot_name,
             token_verifier=token_verifier,
             auth=AuthSettings(
-                issuer_url=f"{self.ar_url}",
+                issuer_url=AnyHttpUrl(f"{self.ar_url}"),
                 required_scopes=["user"],
-                resource_server_url="http://localhost:9090",
+                resource_server_url=AnyHttpUrl("http://localhost:9090"),
             ),
-            host="localhost",
-            port=9090
+            host=host,
+            port=port
         )
         
         # Build skill configurations
@@ -140,9 +145,10 @@ class AnswerRocketMCPServer:
     
     def _add_skill_description_tool(self):
         """Add the get_skill_description tool."""
-        def get_skill_description(skill_id: str) -> Optional[str]:
+        async def get_skill_description(context, skill_id: str) -> Optional[str]:
             """Get the description of a skill."""
             try:
+                await context.info(f"Getting description for skill: {skill_id}")
                 assert self.client is not None, "Client should be initialized"
                 skill_info = self.client.config.get_copilot_skill(
                     copilot_id=self.copilot_id,
@@ -150,11 +156,16 @@ class AnswerRocketMCPServer:
                     use_published_version=True
                 )
                 if skill_info:
-                    return str(skill_info.description or skill_info.detailed_description or 
-                             f"No description available for skill {skill_id}")
+                    description = str(skill_info.description or skill_info.detailed_description or 
+                                   f"No description available for skill {skill_id}")
+                    await context.info("Successfully retrieved skill description")
+                    return description
+                await context.warning(f"No skill found with ID: {skill_id}")
                 return None
             except Exception as e:
-                print(f"Error getting skill description for {skill_id}: {e}", file=sys.stderr)
+                error_msg = f"Error getting skill description for {skill_id}: {e}"
+                await context.error(error_msg)
+                print(error_msg, file=sys.stderr)
                 return None
         
         # Add tool directly to MCP
