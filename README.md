@@ -237,8 +237,8 @@ To contribute or modify the server:
 
 1. **Clone and install in development mode:**
    ```bash
-   git clone https://github.com/answerrocket/mcp-server-demo.git
-   cd mcp-server-demo
+   git clone https://github.com/answerrocket/mcp-server.git
+   cd mcp-server
    ```
 
 2. **Run the installer for development (uses local repository):**
