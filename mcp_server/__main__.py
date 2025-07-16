@@ -2,6 +2,7 @@
 
 import sys
 import os
+from typing import cast, Literal
 from mcp_server.server import create_server
 
 # Global MCP server instance
@@ -37,7 +38,25 @@ def main():
     server = initialize_server()
     if server:
         print("Starting MCP server...", file=sys.stderr)
-        server.run(transport="streamable-http", mount_path="/mcp")
+        
+        transport_env = os.getenv("MCP_TRANSPORT", "stdio")
+        port = int(os.getenv("MCP_PORT", "8000"))
+        host = os.getenv("MCP_HOST", "127.0.0.1")
+        
+        valid_transports = ["stdio", "sse", "streamable-http"]
+        if transport_env not in valid_transports:
+            transport = cast(Literal["stdio", "sse", "streamable-http"], "stdio")
+        else:
+            transport = cast(Literal["stdio", "sse", "streamable-http"], transport_env)
+        
+        if transport == "stdio":
+            server.run()
+        else:
+            server.run(
+                transport=transport,
+                port=port,
+                host=host
+            )
 
 if __name__ == "__main__":
     main()
