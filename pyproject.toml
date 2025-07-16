@@ -7,7 +7,7 @@ dynamic = ["version"]
 dependencies = [
     "fastmcp>=2.10.0",
     "answerrocket-client>=0.2.59",
-    "mcp[cli]>=1.10.1",
+    "mcp>=1.10.1",
 ]
 
 [build-system]

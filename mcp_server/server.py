@@ -3,13 +3,15 @@
 import asyncio
 import sys
 from typing import List, Optional
-from fastmcp import FastMCP
-from fastmcp.tools.tool import Tool
+from pydantic import AnyHttpUrl
 from answer_rocket.client import AnswerRocketClient
 from answer_rocket.graphql.schema import MaxCopilot
 
-from .models import SkillConfig
-from .utils import (
+from mcp_server.auth.token_verifier import IntrospectionTokenVerifier
+from mcp.server import FastMCP
+from mcp.server.auth.settings import AuthSettings
+from mcp_server.models import SkillConfig
+from mcp_server.utils import (
     validate_environment,
     create_client,
     get_copilot_info,
@@ -47,8 +49,24 @@ class AnswerRocketMCPServer:
         copilot_name = str(self.copilot.name) if self.copilot.name else self.copilot_id
         print(f"Copilot name: {copilot_name}", file=sys.stderr)
             
+         # Create token verifier for introspection with RFC 8707 resource validation
+        token_verifier = IntrospectionTokenVerifier(
+            introspection_endpoint=f"{self.ar_url}/api/oauth/introspect",
+            server_url=self.ar_url,
+            validate_resource=True, 
+        )
         # Initialize MCP with copilot name
-        self.mcp = FastMCP(copilot_name)
+        self.mcp = FastMCP(
+            copilot_name,
+            token_verifier=token_verifier,
+            auth=AuthSettings(
+                issuer_url=f"{self.ar_url}",
+                required_scopes=["user"],
+                resource_server_url="http://localhost:9090",
+            ),
+            host="localhost",
+            port=9090
+        )
         
         # Build skill configurations
         print("Building skill configurations", file=sys.stderr)
@@ -78,14 +96,14 @@ class AnswerRocketMCPServer:
             # Create annotations
             annotations = create_tool_annotations(skill_config)
             
-            # Create Tool object and add it
-            tool = Tool.from_function(
+            # Add tool directly to MCP
+            assert self.mcp is not None, "MCP instance should be initialized"
+            self.mcp.add_tool(
                 tool_func,
                 name=skill_config.tool_name,
                 description=skill_config.detailed_description,
                 annotations=annotations
             )
-            self.mcp.add_tool(tool)
             
             # Log parameter info
             param_count = len(skill_config.parameters)
@@ -125,6 +143,7 @@ class AnswerRocketMCPServer:
         def get_skill_description(skill_id: str) -> Optional[str]:
             """Get the description of a skill."""
             try:
+                assert self.client is not None, "Client should be initialized"
                 skill_info = self.client.config.get_copilot_skill(
                     copilot_id=self.copilot_id,
                     copilot_skill_id=str(skill_id),
@@ -138,13 +157,13 @@ class AnswerRocketMCPServer:
                 print(f"Error getting skill description for {skill_id}: {e}", file=sys.stderr)
                 return None
         
-        # Create Tool object and add it
-        tool = Tool.from_function(
+        # Add tool directly to MCP
+        assert self.mcp is not None, "MCP instance should be initialized"
+        self.mcp.add_tool(
             get_skill_description,
             name="get_skill_description",
             description="Get the description of a skill."
         )
-        self.mcp.add_tool(tool)
 
 
 def create_server() -> FastMCP:
