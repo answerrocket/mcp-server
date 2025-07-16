@@ -101,7 +101,7 @@ If you prefer to install manually:
 
 6. **Create copilot metadata script:**
    ```bash
-   uv run python get_copilots.py "{YOUR_AR_URL}" "{YOUR_API_TOKEN}"
+   uv run python scripts/get_copilots.py "{YOUR_AR_URL}" "{YOUR_API_TOKEN}"
    ```
 
 7. **Install MCP servers for each copilot:**
