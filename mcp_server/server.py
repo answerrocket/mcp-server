@@ -15,18 +15,12 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp.server import Context
 from mcp_server.models import SkillConfig
 from mcp_server.utils import (
-    build_skill_configs,
-    build_skill_configs_async,
-    create_client,
-    create_client_from_context,
-    create_skill_tool_function,
-    create_tool_annotations,
-    get_copilot_info,
-    get_copilot_info_from_context,
-    get_mcp_mode,
-    validate_environment,
-    validate_remote_environment,
-    extract_copilot_id_from_context,
+    EnvironmentValidator,
+    ClientManager,
+    CopilotService,
+    SkillService,
+    ToolFactory,
+    RequestContextExtractor,
 )
 
 
@@ -57,13 +51,13 @@ class AnswerRocketMCPServer:
     def _initialize_local(self) -> FastMCP:
         """Initialize the MCP server for local mode."""
         # Validate local environment
-        self.ar_url, self.ar_token, self.copilot_id = validate_environment()
+        self.ar_url, self.ar_token, self.copilot_id = EnvironmentValidator.validate_local_environment()
         
         # Create client and fetch copilot
-        self.client = create_client(self.ar_url, self.ar_token)
+        self.client = ClientManager.create_client(self.ar_url, self.ar_token)
         
         # Get copilot information
-        self.copilot = get_copilot_info(self.client, self.copilot_id)
+        self.copilot = CopilotService.get_copilot_info(self.client, self.copilot_id)
         if not self.copilot:
             raise ValueError(f"Copilot {self.copilot_id} not found")
         
@@ -81,7 +75,7 @@ class AnswerRocketMCPServer:
         )
         
         # Build skill configurations
-        self.skill_configs = build_skill_configs(self.copilot, self.client)
+        self.skill_configs = SkillService.build_skill_configs(self.copilot, self.client)
         
         # Register tools
         self._register_tools_local()
@@ -91,7 +85,7 @@ class AnswerRocketMCPServer:
     def _initialize_remote(self) -> FastMCP:
         """Initialize the MCP server for remote mode with OAuth."""
         # Validate remote environment
-        self.ar_url, self.auth_server_url, self.resource_server_url = validate_remote_environment()
+        self.ar_url, self.auth_server_url, self.resource_server_url = EnvironmentValidator.validate_remote_environment()
         
         # Create token verifier for introspection with RFC 8707 resource validation
         token_verifier = IntrospectionTokenVerifier(
@@ -100,8 +94,8 @@ class AnswerRocketMCPServer:
             validate_resource=True, 
         )
 
-        port = int(os.getenv("MCP_PORT", "8000"))
-        host = os.getenv("MCP_HOST", "127.0.0.1")
+        port = int(os.getenv("MCP_PORT", "9090"))
+        host = os.getenv("MCP_HOST", "localhost")
         
         # Initialize MCP with OAuth for remote mode
         self.mcp = FastMCP(
@@ -184,7 +178,7 @@ class AnswerRocketMCPServer:
                 return await original_list_tools()
                 
             context = self.mcp.get_context()
-            copilot_id = extract_copilot_id_from_context(context)
+            copilot_id = RequestContextExtractor.extract_copilot_id(context)
             
             print(f"Dynamic tools: copilot_id={copilot_id}", file=sys.stderr)
             
@@ -194,23 +188,23 @@ class AnswerRocketMCPServer:
             if copilot_id:
                 print(f"Getting copilot info for {copilot_id}", file=sys.stderr)
                 # Get copilot info from context
-                copilot = get_copilot_info_from_context(context, self.ar_url, copilot_id)
+                copilot = CopilotService.get_copilot_info_from_context(context, self.ar_url, copilot_id)
                 
                 if copilot:
                     print(f"Found copilot: {copilot.name}", file=sys.stderr)
                     # Create client from context
-                    client = create_client_from_context(context, self.ar_url)
+                    client = ClientManager.create_client_from_context(context, self.ar_url)
                     if client:
                         # Build and register skills for this copilot
-                        skill_configs = await build_skill_configs_async(copilot, client)
+                        skill_configs = await SkillService.build_skill_configs_async(copilot, client)
                         print(f"Found {len(skill_configs)} skills", file=sys.stderr)
                         for skill_config in skill_configs:
                             try:
-                                tool_func = create_skill_tool_function(
+                                tool_func = ToolFactory.create_skill_tool_function(
                                     skill_config, 
                                     self.ar_url
                                 )
-                                annotations = create_tool_annotations(skill_config)
+                                annotations = ToolFactory.create_tool_annotations(skill_config)
                                 self.mcp.add_tool(
                                     tool_func,
                                     name=skill_config.tool_name,
@@ -241,7 +235,7 @@ class AnswerRocketMCPServer:
                 return False
                 
             # Create tool function with proper signature for local mode
-            tool_func = create_skill_tool_function(
+            tool_func = ToolFactory.create_skill_tool_function(
                 skill_config, 
                 self.ar_url, 
                 self.ar_token, 
@@ -249,7 +243,7 @@ class AnswerRocketMCPServer:
             )
             
             # Create annotations
-            annotations = create_tool_annotations(skill_config)
+            annotations = ToolFactory.create_tool_annotations(skill_config)
             
             # Add tool directly to MCP
             assert self.mcp is not None, "MCP instance should be initialized"
@@ -277,6 +271,6 @@ class AnswerRocketMCPServer:
 
 def create_server() -> FastMCP:
     """Create and initialize the MCP server."""
-    mode = get_mcp_mode()
+    mode = EnvironmentValidator.get_mcp_mode()
     server = AnswerRocketMCPServer(mode)
     return server.initialize()

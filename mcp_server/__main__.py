@@ -4,7 +4,7 @@ import sys
 import os
 from typing import cast, Literal
 from mcp_server.server import create_server
-from mcp_server.utils import get_mcp_mode
+from mcp_server.utils import EnvironmentValidator
 
 # Global MCP server instance
 mcp = None
@@ -30,8 +30,8 @@ def validate_environment_for_mode(mode: str) -> bool:
     elif mode == "remote":
         # Remote mode only requires AR_URL (other URLs are derived)
         ar_url = os.getenv("AR_URL")
-        mcp_host = os.getenv("MCP_HOST", "127.0.0.1")
-        mcp_port = os.getenv("MCP_PORT", "8000")
+        mcp_host = os.getenv("MCP_HOST", "localhost")
+        mcp_port = os.getenv("MCP_PORT", "9090")
         
         print(f"Mode: {mode}", file=sys.stderr)
         print(f"AR_URL: {'✓' if ar_url else '✗'}", file=sys.stderr)
@@ -59,7 +59,7 @@ def initialize_server():
     global mcp
     
     # Get mode from environment
-    mode = get_mcp_mode()
+    mode = EnvironmentValidator.get_mcp_mode()
     
     # Validate environment for the selected mode
     if not validate_environment_for_mode(mode):
@@ -80,6 +80,7 @@ def main():
     server = initialize_server()
     transport = cast(Literal["stdio", "sse", "streamable-http"], os.getenv("MCP_TRANSPORT", "stdio"))
     if server:
+        print(f"Running MCP server in {transport} mode...", file=sys.stderr)
         server.run(transport=transport)
 
 if __name__ == "__main__":
