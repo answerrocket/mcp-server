@@ -5,9 +5,8 @@ readme = "README.md"
 requires-python = ">=3.10.7"
 dynamic = ["version"]
 dependencies = [
-    "fastmcp>=2.10.0",
     "answerrocket-client>=0.2.59",
-    "mcp>=1.10.1",
+    "mcp>=1.10.1"
 ]
 
 [build-system]

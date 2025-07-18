@@ -14,7 +14,7 @@ from mcp_server.models import SkillConfig, SkillParameter
 
 
 def validate_environment() -> Tuple[str, str, str]:
-    """Validate required environment variables."""
+    """Validate required environment variables for local mode."""
     ar_url = os.getenv("AR_URL")
     ar_token = os.getenv("AR_TOKEN")
     copilot_id = os.getenv("COPILOT_ID")
@@ -32,6 +32,76 @@ def validate_environment() -> Tuple[str, str, str]:
     return ar_url, ar_token, copilot_id
 
 
+def validate_remote_environment() -> Tuple[str, str, str]:
+    """Validate required environment variables for remote mode."""
+    ar_url = os.getenv("AR_URL")
+    
+    if not ar_url:
+        print("Error: AR_URL environment variable is required")
+        sys.exit(1)
+    
+    # AUTH_SERVER_URL is the same as AR_URL (AnswerRocket is the OAuth server)
+    auth_server_url = ar_url
+    
+    # RESOURCE_SERVER_URL is constructed from MCP_HOST and MCP_PORT
+    mcp_host = os.getenv("MCP_HOST", "127.0.0.1")
+    mcp_port = os.getenv("MCP_PORT", "8000")
+    
+    # Determine protocol - use https for non-localhost, http for localhost
+    if mcp_host in ["127.0.0.1", "localhost"]:
+        protocol = "http"
+    else:
+        protocol = "https"
+    
+    resource_server_url = f"{protocol}://{mcp_host}:{mcp_port}"
+        
+    return ar_url, auth_server_url, resource_server_url
+
+
+def get_mcp_mode() -> str:
+    """Get the MCP mode (local or remote)."""
+    return os.getenv("MCP_MODE", "local").lower()
+
+
+def extract_bearer_token_from_context(context: Context) -> Optional[str]:
+    """Extract bearer token from request headers."""
+    try:
+        request = context.request_context.request
+        if request and hasattr(request, 'headers'):
+            # Check for Authorization header with Bearer token
+            auth_header = request.headers.get('authorization', '')
+            if auth_header.startswith('Bearer '):
+                return auth_header[7:]  # Remove 'Bearer ' prefix
+            
+            # Also check raw headers for lowercase variations
+            if hasattr(request.headers, 'raw'):
+                for header_name, header_value in request.headers.raw:
+                    if header_name.lower() == b'authorization':
+                        auth_value = header_value.decode('utf-8')
+                        if auth_value.startswith('Bearer '):
+                            return auth_value[7:]
+    except Exception as e:
+        print(f"Error extracting bearer token: {e}")
+    return None
+
+
+def extract_copilot_id_from_context(context: Context) -> Optional[str]:
+    """Extract copilot ID from request path for remote mode."""
+    try:
+        request = context.request_context.request
+        if request and hasattr(request, 'scope'):
+            path = request.scope.get("path", "")
+            # Look for patterns like /mcp/copilot/{copilot_id}
+            if "/agent/" in path:
+                parts = path.split("/agent/")
+                if len(parts) > 1:
+                    copilot_id = parts[1].split("/")[0]  # Get first part after /copilot/
+                    return copilot_id
+    except Exception as e:
+        print(f"Error extracting copilot ID from context: {e}")
+    return None
+
+
 def create_client(ar_url: str, ar_token: str) -> AnswerRocketClient:
     """Create and validate AnswerRocket client."""
     client = AnswerRocketClient(ar_url, ar_token)
@@ -42,6 +112,25 @@ def create_client(ar_url: str, ar_token: str) -> AnswerRocketClient:
         sys.exit(1)
         
     return client
+
+
+def create_client_from_context(context: Context, ar_url: str, fallback_token: Optional[str] = None) -> Optional[AnswerRocketClient]:
+    """Create AnswerRocket client from context (extracting bearer token) or fallback token."""
+    # Try to extract bearer token from context first
+    bearer_token = extract_bearer_token_from_context(context)
+    
+    # Use bearer token if available, otherwise fallback
+    token_to_use = bearer_token or fallback_token
+    
+    if not token_to_use:
+        return None
+    
+    try:
+        client = AnswerRocketClient(ar_url, token_to_use)
+        return client
+    except Exception as e:
+        print(f"Error creating client: {e}")
+        return None
 
 
 def get_copilot_info(client: AnswerRocketClient, copilot_id: str) -> Optional[MaxCopilot]:
@@ -60,6 +149,23 @@ def get_copilot_info(client: AnswerRocketClient, copilot_id: str) -> Optional[Ma
         print(f"Error getting copilot info: {e}")
         # Fallback to None
         return None
+
+
+def get_copilot_info_from_context(context: Context, ar_url: str, copilot_id: Optional[str] = None, fallback_token: Optional[str] = None) -> Optional[MaxCopilot]:
+    """Get copilot information from context-based client."""
+    # Extract copilot ID from context if not provided
+    if not copilot_id:
+        copilot_id = extract_copilot_id_from_context(context)
+    
+    if not copilot_id:
+        return None
+    
+    # Create client from context
+    client = create_client_from_context(context, ar_url, fallback_token)
+    if not client:
+        return None
+    
+    return get_copilot_info(client, copilot_id)
 
 
 def extract_skill_parameters(skill: MaxCopilotSkill) -> List[SkillParameter]:
@@ -124,7 +230,14 @@ async def build_skill_configs_async(copilot: MaxCopilot, client: AnswerRocketCli
 
 def build_skill_configs(copilot: MaxCopilot, client: AnswerRocketClient) -> List[SkillConfig]:
     """Wrapper to run async skill config building."""
-    return asyncio.run(build_skill_configs_async(copilot, client))
+    try:
+        # Check if we're in an event loop
+        asyncio.get_running_loop()
+        # If we reach here, we're in an event loop - this shouldn't be called
+        raise RuntimeError("build_skill_configs() called from async context. Use build_skill_configs_async() instead.")
+    except RuntimeError:
+        # No event loop running, safe to use asyncio.run()
+        return asyncio.run(build_skill_configs_async(copilot, client))
 
 
 def create_tool_annotations(skill_config: SkillConfig) -> ToolAnnotations:
@@ -145,8 +258,8 @@ def create_tool_annotations(skill_config: SkillConfig) -> ToolAnnotations:
 def create_skill_tool_function(
     skill_config: SkillConfig, 
     ar_url: str, 
-    ar_token: str, 
-    copilot_id: str
+    ar_token: Optional[str] = None, 
+    copilot_id: Optional[str] = None
 ) -> Callable:
     """Create a tool function for a skill with proper signature."""
     skill_parameters = skill_config.get_parameters_dict()
@@ -178,15 +291,23 @@ def create_skill_tool_function(
             if processed_params:
                 await context.debug(f"Using parameters: {processed_params}")
             
-            # Create AnswerRocket client
+            # Create AnswerRocket client (supporting both local and remote modes)
             await context.info("Connecting to AnswerRocket...")
-            ar_client = AnswerRocketClient(ar_url, ar_token)
+            ar_client = create_client_from_context(context, ar_url, ar_token)
+            if not ar_client:
+                raise ValueError("Cannot create AnswerRocket client - no valid token available")
+            
             if not ar_client.can_connect():
                 raise ValueError("Cannot connect to AnswerRocket")
             
+            # Get copilot ID (for remote mode)
+            actual_copilot_id = copilot_id or extract_copilot_id_from_context(context)
+            if not actual_copilot_id:
+                raise ValueError("No copilot ID available")
+            
             # Run the skill with processed parameters
             await context.info("Running skill...")
-            skill_result = ar_client.skill.run(copilot_id, skill_config.skill_name, processed_params)
+            skill_result = ar_client.skill.run(actual_copilot_id, skill_config.skill_name, processed_params)
             
             if not skill_result.success:
                 await context.error(f"Skill execution failed: {skill_result.error}")
