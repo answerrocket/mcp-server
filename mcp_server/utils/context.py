@@ -1,5 +1,6 @@
 """Request context extraction utilities."""
 
+import logging
 from typing import Optional
 from mcp.server.fastmcp.server import Context
 
@@ -26,7 +27,7 @@ class RequestContextExtractor:
                             if auth_value.startswith('Bearer '):
                                 return auth_value[7:]
         except Exception as e:
-            print(f"Error extracting bearer token: {e}")
+            logging.error(f"Error extracting bearer token: {e}")
         return None
 
     @staticmethod
@@ -43,5 +44,5 @@ class RequestContextExtractor:
                         copilot_id = parts[1].split("/")[0]  # Get first part after /copilot/
                         return copilot_id
         except Exception as e:
-            print(f"Error extracting copilot ID from context: {e}")
+            logging.error(f"Error extracting copilot ID from context: {e}")
         return None 

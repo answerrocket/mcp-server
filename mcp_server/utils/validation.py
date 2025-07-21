@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from mcp_server.models import SkillConfig
+from mcp_server.skill_parameter import SkillConfig
 
 
 class ArgumentValidator:

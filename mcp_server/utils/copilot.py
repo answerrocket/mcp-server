@@ -1,5 +1,6 @@
 """Copilot-related operations."""
 
+import logging
 from typing import Optional
 from answer_rocket.client import AnswerRocketClient
 from answer_rocket.graphql.schema import MaxCopilot
@@ -26,7 +27,7 @@ class CopilotService:
             
             return copilot_info
         except Exception as e:
-            print(f"Error getting copilot info: {e}")
+            logging.error(f"Error getting copilot info: {e}")
             # Fallback to None
             return None
 

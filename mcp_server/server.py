@@ -3,6 +3,7 @@
 import asyncio
 import sys
 import os
+import logging
 from typing import List, Optional
 from pydantic import AnyHttpUrl
 from starlette.requests import Request
@@ -13,7 +14,7 @@ from mcp_server.auth.token_verifier import IntrospectionTokenVerifier
 from mcp.server import FastMCP
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp.server import Context
-from mcp_server.models import SkillConfig
+from mcp_server.skill_parameter import SkillConfig
 from mcp_server.utils import (
     EnvironmentValidator,
     ClientManager,
@@ -174,30 +175,30 @@ class AnswerRocketMCPServer:
         async def dynamic_list_tools():
             """Dynamically register tools based on copilot ID from context."""
             if not self.mcp or not self.ar_url:
-                print("Missing MCP or AR_URL in dynamic_list_tools", file=sys.stderr)
+                logging.error("Missing MCP or AR_URL in dynamic_list_tools")
                 return await original_list_tools()
                 
             context = self.mcp.get_context()
             copilot_id = RequestContextExtractor.extract_copilot_id(context)
             
-            print(f"Dynamic tools: copilot_id={copilot_id}", file=sys.stderr)
+            logging.info(f"Dynamic tools: copilot_id={copilot_id}")
             
             # Always clear existing tools first
             self.mcp._tool_manager._tools.clear()
             
             if copilot_id:
-                print(f"Getting copilot info for {copilot_id}", file=sys.stderr)
+                logging.info(f"Getting copilot info for {copilot_id}")
                 # Get copilot info from context
                 copilot = CopilotService.get_copilot_info_from_context(context, self.ar_url, copilot_id)
                 
                 if copilot:
-                    print(f"Found copilot: {copilot.name}", file=sys.stderr)
+                    logging.info(f"Found copilot: {copilot.name}")
                     # Create client from context
                     client = ClientManager.create_client_from_context(context, self.ar_url)
                     if client:
                         # Build and register skills for this copilot
                         skill_configs = await SkillService.build_skill_configs_async(copilot, client)
-                        print(f"Found {len(skill_configs)} skills", file=sys.stderr)
+                        logging.info(f"Found {len(skill_configs)} skills")
                         for skill_config in skill_configs:
                             try:
                                 tool_func = ToolFactory.create_skill_tool_function(
@@ -211,16 +212,16 @@ class AnswerRocketMCPServer:
                                     description=skill_config.detailed_description,
                                     annotations=annotations
                                 )
-                                print(f"Registered tool: {skill_config.tool_name}", file=sys.stderr)
+                                logging.info(f"Registered tool: {skill_config.tool_name}")
                             except Exception as e:
                                 # Skip failed tool registration
-                                print(f"Failed to register tool for skill {skill_config.skill_name}: {e}", file=sys.stderr)
+                                logging.error(f"Failed to register tool for skill {skill_config.skill_name}: {e}")
                     else:
-                        print("Failed to create client from context", file=sys.stderr)
+                        logging.error("Failed to create client from context")
                 else:
-                    print(f"Copilot {copilot_id} not found", file=sys.stderr)
+                    logging.error(f"Copilot {copilot_id} not found")
             else:
-                print("No copilot_id found in context", file=sys.stderr)
+                logging.error("No copilot_id found in context")
             
             return await original_list_tools()
         

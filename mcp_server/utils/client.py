@@ -1,6 +1,7 @@
 """AnswerRocket client management utilities."""
 
 import sys
+import logging
 from typing import Optional
 from answer_rocket.client import AnswerRocketClient
 from mcp.server.fastmcp.server import Context
@@ -17,8 +18,8 @@ class ClientManager:
         client = AnswerRocketClient(ar_url, ar_token)
         
         if not client.can_connect():
-            print(f"Error: Cannot connect to AnswerRocket at {ar_url}")
-            print("Please check your AR_URL and AR_TOKEN")
+            logging.error(f"Error: Cannot connect to AnswerRocket at {ar_url}")
+            logging.error("Please check your AR_URL and AR_TOKEN")
             sys.exit(1)
             
         return client
@@ -39,5 +40,5 @@ class ClientManager:
             client = AnswerRocketClient(ar_url, token_to_use)
             return client
         except Exception as e:
-            print(f"Error creating client: {e}")
+            logging.error(f"Error creating client: {e}")
             return None 

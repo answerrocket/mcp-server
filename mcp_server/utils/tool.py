@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional
 from mcp.types import ToolAnnotations
 from mcp.server.fastmcp.server import Context
 
-from mcp_server.models import SkillConfig
+from mcp_server.skill_parameter import SkillConfig
 from .context import RequestContextExtractor
 from .client import ClientManager
 

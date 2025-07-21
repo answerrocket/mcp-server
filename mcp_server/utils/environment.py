@@ -2,6 +2,7 @@
 
 import os
 import sys
+import logging
 from typing import Tuple
 
 
@@ -16,13 +17,13 @@ class EnvironmentValidator:
         copilot_id = os.getenv("COPILOT_ID")
         
         if not ar_url:
-            print("Error: AR_URL environment variable is required")
+            logging.error("Error: AR_URL environment variable is required")
             sys.exit(1)
         if not ar_token:
-            print("Error: AR_TOKEN environment variable is required")
+            logging.error("Error: AR_TOKEN environment variable is required")
             sys.exit(1)
         if not copilot_id:
-            print("Error: COPILOT_ID environment variable is required")
+            logging.error("Error: COPILOT_ID environment variable is required")
             sys.exit(1)
             
         return ar_url, ar_token, copilot_id
@@ -33,7 +34,7 @@ class EnvironmentValidator:
         ar_url = os.getenv("AR_URL")
         
         if not ar_url:
-            print("Error: AR_URL environment variable is required")
+            logging.error("Error: AR_URL environment variable is required")
             sys.exit(1)
         
         # AUTH_SERVER_URL is the same as AR_URL (we are the OAuth server)

@@ -1,11 +1,12 @@
 """Skill-related operations and configurations."""
 
 import asyncio
+import logging
 from typing import List, Optional
 from answer_rocket.client import AnswerRocketClient
 from answer_rocket.graphql.schema import MaxCopilot, MaxCopilotSkill
 
-from mcp_server.models import SkillConfig, SkillParameter
+from mcp_server.skill_parameter import SkillConfig, SkillParameter
 
 
 class SkillService:
@@ -33,7 +34,7 @@ class SkillService:
             )
             return skill_info
         except Exception as e:
-            print(f"❌ Error fetching skill {skill_id}: {e}")
+            logging.error(f"Error fetching skill {skill_id}: {e}")
             return None
 
     @staticmethod
