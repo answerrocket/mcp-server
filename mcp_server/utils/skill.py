@@ -72,10 +72,7 @@ class SkillService:
     def build_skill_configs(copilot: MaxCopilot, client: AnswerRocketClient) -> List[SkillConfig]:
         """Wrapper to run async skill config building."""
         try:
-            # Check if we're in an event loop
             asyncio.get_running_loop()
-            # If we reach here, we're in an event loop - this shouldn't be called
             raise RuntimeError("build_skill_configs() called from async context. Use build_skill_configs_async() instead.")
         except RuntimeError:
-            # No event loop running, safe to use asyncio.run()
             return asyncio.run(SkillService.build_skill_configs_async(copilot, client))

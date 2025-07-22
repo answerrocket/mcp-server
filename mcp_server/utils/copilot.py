@@ -22,7 +22,6 @@ class CopilotService:
             if not client.can_connect():
                 raise ValueError("Cannot connect to AnswerRocket")
             
-            # Get copilot information
             copilot_info = client.config.get_copilot(True, copilot_id)
             if not copilot_info:
                 raise ValueError(f"Copilot with ID '{copilot_id}' not found")
@@ -30,7 +29,6 @@ class CopilotService:
             return copilot_info
         except Exception as e:
             logging.error(f"Error getting copilot info: {e}")
-            # Fallback to None
             return None
 
     @staticmethod

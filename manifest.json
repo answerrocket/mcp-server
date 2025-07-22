@@ -16,7 +16,7 @@
     "entry_point": "python",
     "mcp_config": {
       "command": "uvx",
-      "args": ["maxai-mcp"],
+      "args": ["maxai-mcp@0.1.8"],
       "env": {
         "AR_URL": "${user_config.AR_URL}",
         "AR_TOKEN": "${user_config.AR_TOKEN}",

@@ -22,7 +22,6 @@ class ArgumentValidator:
             if value is None:
                 continue
             
-            # Validate constrained values
             if param.constrained_values:
                 ArgumentValidator._validate_constraints(param.name, value, param.constrained_values, param.is_multi)
             
