@@ -4,7 +4,9 @@ import logging
 from typing import Optional
 from answer_rocket.client import AnswerRocketClient
 from answer_rocket.graphql.schema import MaxCopilot
-from mcp.server.fastmcp.server import Context
+from mcp.server.fastmcp import Context
+from mcp.server.session import ServerSession
+from starlette.requests import Request
 
 from .context import RequestContextExtractor
 from .client import ClientManager
@@ -32,7 +34,7 @@ class CopilotService:
             return None
 
     @staticmethod
-    def get_copilot_info_from_context(context: Context, ar_url: str, copilot_id: Optional[str] = None, fallback_token: Optional[str] = None) -> Optional[MaxCopilot]:
+    def get_copilot_info_from_context(context: Context[ServerSession, object, Request], ar_url: str, copilot_id: Optional[str] = None, fallback_token: Optional[str] = None) -> Optional[MaxCopilot]:
         """Get copilot information from context-based client."""
         # Extract copilot ID from context if not provided
         if not copilot_id:
@@ -40,8 +42,7 @@ class CopilotService:
         
         if not copilot_id:
             return None
-        
-        # Create client from context
+
         client = ClientManager.create_client_from_context(context, ar_url, fallback_token)
         if not client:
             return None

@@ -17,10 +17,14 @@ class SkillService:
         """Extract parameters from a skill."""
         parameters = []
         
-        # Check if skill has parameters attribute and it's not None
         if not hasattr(skill, 'parameters') or skill.parameters is None:
             return parameters
-            
+        
+        for param in skill.parameters:
+            skill_param = SkillParameter.from_max_parameter(param)
+            if skill_param:
+                parameters.append(skill_param)
+                
         return parameters
 
     @staticmethod
@@ -40,22 +44,18 @@ class SkillService:
     @staticmethod
     async def build_skill_configs_async(copilot: MaxCopilot, client: AnswerRocketClient) -> List[SkillConfig]:
         """Build skill configurations for all skills in a copilot."""
-
         if not copilot.copilot_skill_ids:
             return []
             
-        # Convert skill IDs to list
         skill_ids = copilot.copilot_skill_ids
         if not isinstance(skill_ids, list):
             skill_ids = [skill_ids] if skill_ids else []
         
-        # Fetch all skill info in parallel
         skill_infos = await asyncio.gather(*[
             SkillService.fetch_skill_info(client, str(copilot.copilot_id), str(skill_id)) 
             for skill_id in skill_ids
         ])
         
-        # Build skill configs
         skill_configs = []
         for skill_info in skill_infos:
             if skill_info and not getattr(skill_info, 'scheduling_only', False):
@@ -78,4 +78,4 @@ class SkillService:
             raise RuntimeError("build_skill_configs() called from async context. Use build_skill_configs_async() instead.")
         except RuntimeError:
             # No event loop running, safe to use asyncio.run()
-            return asyncio.run(SkillService.build_skill_configs_async(copilot, client)) 
+            return asyncio.run(SkillService.build_skill_configs_async(copilot, client))
