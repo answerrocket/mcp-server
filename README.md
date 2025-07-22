@@ -69,8 +69,8 @@ If you prefer to install manually:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/answerrocket/mcp-server-demo.git
-   cd mcp-server-demo
+   git clone https://github.com/answerrocket/mcp-server.git
+   cd mcp-server
    ```
 
 2. **Install uv package manager:**
@@ -101,7 +101,7 @@ If you prefer to install manually:
 
 6. **Create copilot metadata script:**
    ```bash
-   uv run python get_copilots.py "{YOUR_AR_URL}" "{YOUR_API_TOKEN}"
+   uv run python scripts/get_copilots.py "{YOUR_AR_URL}" "{YOUR_API_TOKEN}"
    ```
 
 7. **Install MCP servers for each copilot:**
@@ -237,8 +237,8 @@ To contribute or modify the server:
 
 1. **Clone and install in development mode:**
    ```bash
-   git clone https://github.com/answerrocket/mcp-server-demo.git
-   cd mcp-server-demo
+   git clone https://github.com/answerrocket/mcp-server.git
+   cd mcp-server
    ```
 
 2. **Run the installer for development (uses local repository):**
