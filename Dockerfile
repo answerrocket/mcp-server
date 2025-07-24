@@ -11,7 +11,6 @@ COPY mcp_server/ ./mcp_server/
 
 RUN pip install --no-cache-dir -e .
 
-ENV AR_URL=${AR_URL}
 ENV MCP_MODE=remote
 ENV MCP_HOST=0.0.0.0
 ENV MCP_PORT=9090

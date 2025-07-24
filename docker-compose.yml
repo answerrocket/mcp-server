@@ -8,6 +8,4 @@ services:
     container_name: mcp-server
     ports:
       - "9090:9090"
-    environment:
-      - AR_URL=${AR_URL}
     restart: unless-stopped
