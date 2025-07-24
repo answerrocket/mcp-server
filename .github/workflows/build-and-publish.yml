@@ -4,7 +4,7 @@ on: push
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: mcp
+  ECR_REPOSITORY: answerrocket/mcp
 
 jobs:
   build:
