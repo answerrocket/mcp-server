@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
+from uuid import UUID
 from answer_rocket.graphql.schema import MaxCopilot, MaxCopilotSkill, MaxCopilotSkillParameter
 
 
@@ -24,26 +25,21 @@ class SkillParameter:
             return None
             
         param_name = str(param.name)
-        
-        # Determine parameter type based on is_multi field
+
         is_multi = bool(getattr(param, 'is_multi', False))
         type_hint = List[str] if is_multi else str
-        
-        # Get description from llm_description or description field
+
         description = str(getattr(param, 'llm_description', '') or 
                          getattr(param, 'description', '') or 
                          f"Parameter {param_name}")
-        
-        # Get constrained values if they exist
+
         constrained_values = getattr(param, 'constrained_values', None)
         if constrained_values:
-            # Convert to list of strings
             if isinstance(constrained_values, list):
                 constrained_values = [str(v) for v in constrained_values]
             else:
                 constrained_values = None
-                
-        # Parameters are not required by default in the original code
+
         required = False
         
         return cls(
@@ -99,13 +95,18 @@ class SkillConfig:
         """Check if skill is scheduling only."""
         return bool(getattr(self.skill, 'scheduling_only', False))
     
+    @property
+    def dataset_id(self) -> Optional[UUID]:
+        """Get the dataset ID associated with this skill."""
+        dataset_id = getattr(self.skill, 'dataset_id', None)
+        
+        return UUID(dataset_id)
+    
     def get_parameters_dict(self) -> Dict[str, Dict[str, Any]]:
         """Get parameters as a dictionary matching the original format."""
         parameters = {}
         for param in self.parameters:
             param_desc = param.description or f"Parameter {param.name}"
-            if param.constrained_values:
-                param_desc += f" (Allowed values: {', '.join(param.constrained_values)})"
                 
             parameters[param.name] = {
                 'type': 'array' if param.is_multi else 'string',
