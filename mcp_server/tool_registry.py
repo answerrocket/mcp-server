@@ -46,7 +46,8 @@ class ToolRegistry:
             tool_func,
             name=skill_config.tool_name,
             description=skill_config.detailed_description,
-            annotations=annotations
+            annotations=annotations,
+            structured_output=True
         )
         
         logging.debug(f"Registered tool: {skill_config.tool_name}")

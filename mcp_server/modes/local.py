@@ -48,4 +48,5 @@ class LocalMode(BaseMode):
         )
         
         registry.register_skills(skill_configs)
+
         logging.info(f"Registered {len(skill_configs)} skills for copilot {self.copilot.name}")

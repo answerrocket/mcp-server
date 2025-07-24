@@ -34,8 +34,8 @@ class ServerConfig:
         config = cls(
             mode=mode,
             ar_url=ar_url,
-            host=os.getenv("MCP_HOST", "127.0.0.1" if mode == "local" else "localhost"),
-            port=int(os.getenv("MCP_PORT", "8000" if mode == "local" else "9090")),
+            host=os.getenv("MCP_HOST", "localhost"),
+            port=int(os.getenv("MCP_PORT", "9090")),
             transport=os.getenv("MCP_TRANSPORT", "stdio"),
         )
         

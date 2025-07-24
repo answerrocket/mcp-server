@@ -75,7 +75,7 @@ class RemoteMode(BaseMode):
     
     async def _register_copilot_tools(self, context, copilot_id: str):
         """Register tools for a specific copilot."""
-        if not self.mcp:  # Type guard
+        if not self.mcp:
             return
 
         ar_url = str(context.request_context.request.base_url).rstrip("/")

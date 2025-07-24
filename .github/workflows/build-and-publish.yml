@@ -1,8 +1,31 @@
 name: main build and publish workflow
 
-on: push
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: mcp
 
 jobs:
+
+  extract-version:
+    name: Extract version from tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+      full_tag: ${{ steps.tag.outputs.full_tag }}
+    steps:
+    - name: Extract tag version
+      id: tag
+      run: |
+        TAG_VERSION="${GITHUB_REF##*/}"
+        TAG_VERSION_NO_PREFIX="${TAG_VERSION#v}"
+        echo "version=$TAG_VERSION_NO_PREFIX" >> $GITHUB_OUTPUT
+        echo "full_tag=$TAG_VERSION" >> $GITHUB_OUTPUT
+        echo "Tag version: $TAG_VERSION (stripped: $TAG_VERSION_NO_PREFIX)"
 
   build:
     name: Build distribution
@@ -29,48 +52,9 @@ jobs:
         path: dist/
         retention-days: 30
 
-  build-dxt:
-    name: Build DXT extension
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-
-    - name: Check tag matches manifest.json version
-      run: |
-        TAG_VERSION="${GITHUB_REF##*/}"
-        TAG_VERSION_NO_PREFIX="${TAG_VERSION#v}"
-        echo "Tag version: $TAG_VERSION (stripped: $TAG_VERSION_NO_PREFIX)"
-        MANIFEST_VERSION=$(jq -r .version manifest.json)
-        echo "manifest.json version: $MANIFEST_VERSION"
-        if [ "$TAG_VERSION_NO_PREFIX" != "$MANIFEST_VERSION" ]; then
-          echo "Tag version ($TAG_VERSION_NO_PREFIX) does not match manifest.json version ($MANIFEST_VERSION)" >&2
-          exit 1
-        fi
-      shell: bash
-
-    - name: Install DXT toolchain
-      run: npm install -g @anthropic-ai/dxt
-
-    - name: Pack extension
-      run: dxt pack
-
-    - name: Upload DXT artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: dxt-dist
-        path: '*.dxt'
-
   publish-to-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     needs:
       - build
     environment:
@@ -87,10 +71,77 @@ jobs:
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
+  publish-to-ecr:
+    name: Publish to ECR
+    runs-on: ubuntu-latest
+    needs:
+      - extract-version
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_AD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_AD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ needs.extract-version.outputs.version }}
+        run: |
+          docker build -t $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$ECR_REPOSITORY:latest
+
+  build-dxt:
+    name: Build DXT extension
+    runs-on: ubuntu-latest
+    needs:
+      - extract-version
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Check tag matches manifest.json version
+      env:
+        TAG_VERSION: ${{ needs.extract-version.outputs.version }}
+      run: |
+        echo "Tag version: $TAG_VERSION"
+        MANIFEST_VERSION=$(jq -r .version manifest.json)
+        echo "manifest.json version: $MANIFEST_VERSION"
+        if [ "$TAG_VERSION" != "$MANIFEST_VERSION" ]; then
+          echo "Tag version ($TAG_VERSION) does not match manifest.json version ($MANIFEST_VERSION)" >&2
+          exit 1
+        fi
+      shell: bash
+
+    - name: Install DXT toolchain
+      run: npm install -g @anthropic-ai/dxt
+
+    - name: Pack extension
+      run: dxt pack
+
+    - name: Upload DXT artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dxt-dist
+        path: '*.dxt'
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     needs:
       - build-dxt
     steps:
