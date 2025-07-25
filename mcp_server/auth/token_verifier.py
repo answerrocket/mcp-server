@@ -5,6 +5,7 @@ import logging
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.shared.auth_utils import check_resource_allowed
 from starlette_context import context
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ class IntrospectionTokenVerifier(TokenVerifier):
                     return None
 
                 # RFC 8707 resource validation (only when --oauth-strict is set)
+
                 if self.validate_resource and not self._validate_resource(data, resource_url, server_url):
                     logger.warning(f"Token resource validation failed. Expected: {resource_url}")
                     return None
@@ -88,13 +90,18 @@ class IntrospectionTokenVerifier(TokenVerifier):
 
         # Check 'aud' claim first (standard JWT audience)
         aud = token_data.get("aud")
+        logger.info(f"aud {aud}")
+        logger.info(f"resource url: {resource_url}")
+        logger.info(f"server_url: {resource_url}")
         if isinstance(aud, list):
             for audience in aud:
-                if self._is_valid_resource(audience.rstrip("/"), resource_url, server_url):
+                logger.info(f"aud_parsed: {self.get_base_url(audience)}")
+                if self._is_valid_resource(self.get_base_url(audience), resource_url, server_url):
                     return True
             return False
         elif aud:
-            return self._is_valid_resource(aud.rstrip("/"), resource_url, server_url)
+            logger.info(f"aud_parsed: {self.get_base_url(aud)}")
+            return self._is_valid_resource(self.get_base_url(aud), resource_url, server_url)
 
         # No resource binding - invalid per RFC 8707
         return False
@@ -105,3 +112,21 @@ class IntrospectionTokenVerifier(TokenVerifier):
             return False
 
         return check_resource_allowed(requested_resource=resource_url, configured_resource=resource)
+
+    def get_base_url(self, url: str) -> str:
+        """
+        Extracts the base URL (scheme + netloc) from a full URL string.
+
+        Args:
+            url (str): The full URL string.
+
+        Returns:
+            str: The base URL (e.g., 'https://example.com').
+        """
+        parsed = urlparse(url)
+
+        # If scheme or netloc is missing, it's likely not a full URL, so return empty or original input
+        if not parsed.scheme or not parsed.netloc:
+            return url  # or return '' if you want to ignore non-URLs
+
+        return f"{parsed.scheme}://{parsed.netloc}"
