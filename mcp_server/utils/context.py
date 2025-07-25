@@ -35,20 +35,8 @@ class RequestContextExtractor:
 
     @staticmethod
     def extract_copilot_id(context: Context) -> Optional[str]:
-        """Extract copilot ID from request path for remote mode."""
-        try:
-            request = context.request_context.request
-            if request and hasattr(request, 'scope'):
-                path = request.scope.get("path", "")
-
-                if "/agent/" in path:
-                    parts = path.split("/agent/")
-                    if len(parts) > 1:
-                        copilot_id = parts[1].split("/")[0]
-                        return copilot_id
-        except Exception as e:
-            logging.error(f"Error extracting copilot ID from context: {e}")
-        return None
+        """Extract copilot ID from request path parameters for remote mode."""
+        return str(context.request_context.request.path_params["copilot_id"])
 
     @staticmethod
     def extract_base_url(context_obj: Context) -> Optional[str]:

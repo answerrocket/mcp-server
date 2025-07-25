@@ -6,6 +6,5 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: mcp-server
-    ports:
-      - "9090:9090"
     restart: unless-stopped
+    network_mode: "host"

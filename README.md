@@ -218,7 +218,7 @@ In remote mode, the server:
 ### Supported Transports
 
 - **stdio:** For direct integration with Desktop apps
-- **streamable-http:** && **sse** For web-based integrations and production deployments
+- **streamable-http:** For web-based integrations and production deployments
 
 ### Authentication
 

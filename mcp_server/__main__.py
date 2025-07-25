@@ -25,7 +25,7 @@ def main():
     logging.info(f"Creating MCP server in {config.mode} mode...")
     server = mode_handler.initialize()
 
-    transport = cast(Literal["stdio", "sse", "streamable-http"], config.transport)
+    transport = cast(Literal["stdio", "streamable-http"], config.transport)
 
     logging.info(f"Running MCP server in {transport} mode...")
     server.run(transport=transport)

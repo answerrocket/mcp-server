@@ -31,12 +31,17 @@ class ServerConfig:
         # Only get AR_URL for local mode
         ar_url = os.getenv("AR_URL") if mode == "local" else None
         
+        transport = os.getenv("MCP_TRANSPORT", "stdio")
+        
+        if transport not in ["stdio", "streamable-http"]:
+            raise ValueError(f"Invalid MCP_TRANSPORT: {transport}. Must be 'stdio' or 'streamable-http'")
+        
         config = cls(
             mode=mode,
             ar_url=ar_url,
             host=os.getenv("MCP_HOST", "localhost"),
             port=int(os.getenv("MCP_PORT", "9090")),
-            transport=os.getenv("MCP_TRANSPORT", "stdio"),
+            transport=transport,
         )
         
         if mode == "local":

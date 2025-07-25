@@ -25,6 +25,7 @@ class FastMCPExtended(FastMCP):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.settings.streamable_http_path = "/mcp/agent/{copilot_id:uuid}/"
     
     def _add_context_middleware(self, middleware_list: list[Middleware]) -> list[Middleware]:
         """Add starlette-context middleware to the middleware list."""
@@ -86,11 +87,6 @@ class FastMCPExtended(FastMCP):
             middleware=new_middleware,
             exception_handlers=original_app.exception_handlers
         )
-    
-    def sse_app(self, mount_path: str | None = None) -> Starlette:
-        """Return an instance of the SSE server app with custom middleware."""
-        original_app = super().sse_app(mount_path)
-        return self._enhance_app_with_dynamic_middleware(original_app)
 
     def streamable_http_app(self) -> Starlette:
         """Return an instance of the StreamableHTTP server app with custom middleware."""
@@ -100,3 +96,20 @@ class FastMCPExtended(FastMCP):
         app.router.lifespan_context = lambda app: self.session_manager.run()
         
         return app
+
+    async def run_streamable_http_async(self) -> None:
+        """Run the server using StreamableHTTP transport with custom uvicorn config."""
+        import uvicorn
+
+        starlette_app = self.streamable_http_app()
+
+        config = uvicorn.Config(
+            app=starlette_app,
+            host=self.settings.host,
+            port=self.settings.port,
+            log_level=self.settings.log_level.lower(),
+            proxy_headers=True,
+            forwarded_allow_ips="*"
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
