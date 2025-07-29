@@ -3,7 +3,6 @@
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from uuid import UUID
-from answer_rocket.graphql.schema import MaxCopilot, MaxCopilotSkill, MaxCopilotSkillParameter
 
 
 @dataclass
@@ -14,26 +13,31 @@ class SkillParameter:
     description: Optional[str]
     required: bool
     is_multi: bool
+    metadata_field: str
     constrained_values: Optional[List[str]]
     
     @classmethod
-    def from_max_parameter(cls, param: MaxCopilotSkillParameter) -> Optional['SkillParameter']:
-        """Create SkillParameter from MaxCopilotSkillParameter."""
-        # Only process CHAT parameters
-        copilot_parameter_type = getattr(param, 'copilot_parameter_type', None)
-        if copilot_parameter_type != "CHAT":
+    def from_hydrated_parameter(cls, param_dict: Dict[str, Any]) -> Optional['SkillParameter']:
+        """Create SkillParameter from hydrated report parameter."""
+        if param_dict['is_hidden']:
             return None
             
-        param_name = str(param.name)
+        param_name = param_dict['key']
+        if not param_name:
+            return None
 
-        is_multi = bool(getattr(param, 'is_multi', False))
+        is_multi = param_dict['is_multi']
+
+        metadata_field = param_dict['metadata_field']
+        # other filters is presented with an is_multi value of false, because it is just a string
+        # but we have to provide it as a list of strings for it to work nicely with Claude once it turns the string representation back into a list
+        if metadata_field == "filters":
+            is_multi = True
         type_hint = List[str] if is_multi else str
 
-        description = str(getattr(param, 'llm_description', '') or 
-                         getattr(param, 'description', '') or 
-                         f"Parameter {param_name}")
+        description = param_dict['llm_description'] or param_dict['description'] or f"Parameter {param_name}"
 
-        constrained_values = getattr(param, 'constrained_values', None)
+        constrained_values = param_dict['constrained_values']
         if constrained_values:
             if isinstance(constrained_values, list):
                 constrained_values = [str(v) for v in constrained_values]
@@ -48,71 +52,83 @@ class SkillParameter:
             description=description,
             required=required,
             is_multi=is_multi,
+            metadata_field=metadata_field,
             constrained_values=constrained_values
         )
 
-
 @dataclass
-class SkillConfig:
-    """Configuration for a skill tool."""
-    skill: MaxCopilotSkill
+class HydratedSkillConfig:
+    """Configuration for a skill tool from hydrated reports."""
+    copilot_skill_id: str
+    name: str
+    tool_description: str
+    detailed_description: str
+    tool_name: str
+    scheduling_only: bool
+    dataset_id: Optional[UUID]
     parameters: List[SkillParameter]
     
-    @property
-    def skill_id(self) -> str:
-        """Get the skill ID."""
-        return str(self.skill.copilot_skill_id)
+    @classmethod
+    def from_hydrated_report(cls, report_dict: Dict[str, Any]) -> Optional['HydratedSkillConfig']:
+        """Create HydratedSkillConfig from hydrated report."""
+        try:
+            copilot_skill_id = report_dict['copilot_skill_id']
+            name = report_dict['name']
+            tool_description = report_dict['tool_description']
+            detailed_description = report_dict['detailed_description']
+            scheduling_only = report_dict['scheduling_only']
+            
+            # Skip scheduling-only skills
+            if scheduling_only:
+                return None
+            
+            # Generate tool name from skill name
+            safe_name = "".join(c if c.isalnum() or c == '_' else '_' for c in name.lower())
+            tool_name = safe_name.strip('_') or f"skill_{copilot_skill_id}"
+            
+            # Parse dataset ID
+            dataset_id = None
+            if report_dict['dataset_id']:
+                try:
+                    dataset_id = UUID(str(report_dict['dataset_id']))
+                except (ValueError, TypeError):
+                    pass
+            
+            # Process parameters
+            parameters = []
+            param_list = report_dict['parameters']
+
+            for param_dict in param_list:
+                skill_param = SkillParameter.from_hydrated_parameter(param_dict)
+                if skill_param:
+                    parameters.append(skill_param)
+            
+            return cls(
+                copilot_skill_id=copilot_skill_id,
+                name=name,
+                tool_description=tool_description,
+                detailed_description=detailed_description,
+                tool_name=tool_name,
+                scheduling_only=scheduling_only,
+                dataset_id=dataset_id,
+                parameters=parameters
+            )
+        except Exception as e:
+            import logging
+            logging.error(f"Error creating HydratedSkillConfig from report: {e}")
+            return None
     
     @property
     def skill_name(self) -> str:
         """Get the skill name."""
-        return str(self.skill.name)
-    
-    @property
-    def tool_name(self) -> str:
-        """Generate MCP tool name from skill name."""
-        # Create a safe tool name (alphanumeric and underscores only)
-        safe_name = "".join(c if c.isalnum() or c == '_' else '_' for c in self.skill_name.lower())
-        return safe_name.strip('_') or f"skill_{self.skill_id}"
-    
-    @property
-    def tool_description(self) -> str:
-        """Get tool description."""
-        return str(self.skill.description or self.skill.detailed_description or f"Execute {self.skill_name} skill")
-    
-    @property
-    def detailed_description(self) -> str:
-        """Get detailed description for logging."""
-        return str(self.skill.detailed_description) or self.tool_description
-    
-    @property
-    def detailed_name(self) -> str:
-        """Get detailed name if available."""
-        return str(getattr(self.skill, 'detailed_name', self.skill_name))
+        return self.name
     
     @property
     def is_scheduling_only(self) -> bool:
         """Check if skill is scheduling only."""
-        return bool(getattr(self.skill, 'scheduling_only', False))
+        return self.scheduling_only
     
     @property
-    def dataset_id(self) -> Optional[UUID]:
-        """Get the dataset ID associated with this skill."""
-        dataset_id = getattr(self.skill, 'dataset_id', None)
-        
-        return UUID(dataset_id)
-    
-    def get_parameters_dict(self) -> Dict[str, Dict[str, Any]]:
-        """Get parameters as a dictionary matching the original format."""
-        parameters = {}
-        for param in self.parameters:
-            param_desc = param.description or f"Parameter {param.name}"
-                
-            parameters[param.name] = {
-                'type': 'array' if param.is_multi else 'string',
-                'description': param_desc,
-                'required': param.required,
-                'is_multi': param.is_multi,
-                'constrained_values': param.constrained_values
-            }
-        return parameters
+    def detailed_name(self) -> str:
+        """Get detailed name (fallback to name since detailed_name not in hydrated reports)."""
+        return self.name

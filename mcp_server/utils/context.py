@@ -37,13 +37,3 @@ class RequestContextExtractor:
     def extract_copilot_id(context: Context) -> Optional[str]:
         """Extract copilot ID from request path parameters for remote mode."""
         return str(context.request_context.request.path_params["copilot_id"])
-
-    @staticmethod
-    def extract_base_url(context_obj: Context) -> Optional[str]:
-        """Extract base URL from starlette context."""
-        try:
-            base_url = context.get("base_url", "").rstrip("/")
-            return base_url if base_url else None
-        except Exception as e:
-            logging.error(f"Error extracting base URL from context: {e}")
-            return None

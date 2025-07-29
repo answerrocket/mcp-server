@@ -4,7 +4,7 @@ import logging
 from typing import List, Optional, Callable
 from mcp.server import FastMCP
 
-from mcp_server.skill_parameter import SkillConfig
+from mcp_server.skill_parameter import HydratedSkillConfig
 from mcp_server.utils import ToolFactory
 
 
@@ -23,7 +23,7 @@ class ToolRegistry:
         self.ar_token = ar_token
         self.copilot_id = copilot_id
     
-    def register_skills(self, skill_configs: List[SkillConfig]):
+    def register_skills(self, skill_configs: List[HydratedSkillConfig]):
         """Register multiple skills as MCP tools."""
         for skill_config in skill_configs:
             try:
@@ -31,7 +31,7 @@ class ToolRegistry:
             except Exception as e:
                 logging.error(f"Failed to register skill {skill_config.skill_name}: {e}")
     
-    def register_skill(self, skill_config: SkillConfig):
+    def register_skill(self, skill_config: HydratedSkillConfig):
         """Register a single skill as an MCP tool."""
         tool_func = ToolFactory.create_skill_tool_function(
             skill_config,
@@ -49,10 +49,18 @@ class ToolRegistry:
             annotations=annotations,
             structured_output=True
         )
-        
+
         logging.debug(f"Registered tool: {skill_config.tool_name}")
+    
+    async def send_tool_list_changed(self):
+        """Send tool list changed notification."""
+        context = self.mcp.get_context()
+        if context and context._request_context:
+            await context.session.send_tool_list_changed()
+            logging.debug("Sent tool list changed notification")
     
     def clear_tools(self):
         """Clear all registered tools."""
         if hasattr(self.mcp, '_tool_manager') and hasattr(self.mcp._tool_manager, '_tools'):
             self.mcp._tool_manager._tools.clear()
+            logging.debug("Cleared all tools from registry")
