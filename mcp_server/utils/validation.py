@@ -1,14 +1,14 @@
 """Argument validation utilities."""
-
+import json
 from typing import Any, Dict
-from mcp_server.skill_parameter import SkillConfig
+from mcp_server.skill_parameter import HydratedSkillConfig
 
 
 class ArgumentValidator:
     """Validates function arguments and parameters."""
     
     @staticmethod
-    def validate_skill_arguments(args: Dict[str, Any], skill_config: SkillConfig) -> Dict[str, Any]:
+    def validate_skill_arguments(args: Dict[str, Any], skill_config: HydratedSkillConfig) -> Dict[str, Any]:
         """Validate and process skill arguments with constraint checking."""
         validated_args = {}
         
@@ -20,6 +20,12 @@ class ArgumentValidator:
                 
             value = args[param.name]
             if value is None:
+                continue
+
+            if param.metadata_field == "filters":
+                parsed_val = str(value).replace("'", "")
+                parsed_val_as_json = json.loads(parsed_val)
+                validated_args[param.name] = parsed_val_as_json
                 continue
             
             if param.constrained_values:
@@ -35,7 +41,9 @@ class ArgumentValidator:
     
     @staticmethod
     def _validate_constraints(param_name: str, value: Any, allowed_values: list, is_multi: bool):
-        """Validate value against allowed constraints."""
+        """Validate value against allowed constraints. Not really necessary with the good LLMs. They have enough
+        context to infer.
+        """
         if is_multi:
             values = value if isinstance(value, list) else [value]
             invalid = [v for v in values if v not in allowed_values]

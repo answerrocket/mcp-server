@@ -6,7 +6,7 @@ from mcp.types import ToolAnnotations
 from mcp.server.fastmcp.server import Context
 from pydantic import Field
 
-from mcp_server.skill_parameter import SkillConfig
+from mcp_server.skill_parameter import HydratedSkillConfig
 from .context import RequestContextExtractor
 from .client import ClientManager
 from .validation import ArgumentValidator
@@ -16,7 +16,7 @@ class ToolFactory:
     """Creates MCP tools and annotations."""
     
     @staticmethod
-    def create_tool_annotations(skill_config: SkillConfig) -> ToolAnnotations:
+    def create_tool_annotations(skill_config: HydratedSkillConfig) -> ToolAnnotations:
         """Create ToolAnnotations for a skill."""
         return ToolAnnotations(
             title=skill_config.detailed_name,
@@ -28,7 +28,7 @@ class ToolFactory:
 
     @staticmethod
     def create_skill_tool_function(
-        skill_config: SkillConfig, 
+        skill_config: HydratedSkillConfig, 
         ar_url: str, 
         ar_token: Optional[str] = None, 
         copilot_id: Optional[str] = None
@@ -74,7 +74,7 @@ class ToolFactory:
         return skill_tool_function
     
     @staticmethod
-    def _configure_function_metadata(func: Callable, skill_config: SkillConfig):
+    def _configure_function_metadata(func: Callable, skill_config: HydratedSkillConfig):
         """Configure function metadata and signature."""
         func.__name__ = f"skill_{skill_config.tool_name}"
         func.__doc__ = skill_config.tool_description
