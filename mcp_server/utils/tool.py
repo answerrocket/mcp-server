@@ -5,6 +5,7 @@ from typing import Callable, Optional, Dict, Any, Annotated
 from mcp.types import ToolAnnotations
 from mcp.server.fastmcp.server import Context
 from pydantic import Field
+from humps import decamelize
 
 from mcp_server.skill_parameter import HydratedSkillConfig
 from .context import RequestContextExtractor
@@ -49,7 +50,9 @@ class ToolFactory:
                     raise ValueError("No copilot ID available")
                 
                 await context.info(f"Executing skill: {skill_config.skill_name}")
-                skill_result = client.skill.run(actual_copilot_id, skill_config.skill_name, processed_params)
+
+                snake_cased_report = decamelize(skill_config.full_report.__json_data__)
+                skill_result = client.skill.run(actual_copilot_id, skill_config.skill_name, processed_params, validate_parameters=True, tool_definition=snake_cased_report)
                 
                 if not skill_result.success:
                     error_msg = f"Skill execution failed: {skill_result.error}"
