@@ -23,10 +23,25 @@ class BaseMode(ABC):
         """Create and configure the MCP server instance."""
         pass
     
-    @abstractmethod
     def setup_tools(self):
-        """Set up tools/skills for the MCP server."""
-        pass
+        """Set up dynamic tool registration for the MCP server using ToolRegistry.
+        
+        Default implementation that works for all modes.
+        Tools are registered dynamically on each list_tools() call.
+        """
+        if not self.mcp:
+            return
+
+        from mcp_server.tool_registry import ToolRegistry
+        
+        registry = ToolRegistry(
+            mcp=self.mcp,
+            ar_url=self.config.ar_url,
+            ar_token=getattr(self.config, 'ar_token', None),
+            copilot_id=getattr(self.config, 'copilot_id', None)
+        )
+        
+        registry.setup_dynamic_registration()
     
     def initialize(self) -> FastMCPExtended:
         """Initialize the mode handler and return configured MCP server."""
