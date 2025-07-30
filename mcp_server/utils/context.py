@@ -3,7 +3,6 @@
 import logging
 from typing import Optional
 from mcp.server.fastmcp.server import Context
-from starlette_context import context
 
 
 class RequestContextExtractor:
