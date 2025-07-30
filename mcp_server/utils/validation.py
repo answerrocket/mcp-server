@@ -21,12 +21,6 @@ class ArgumentValidator:
             value = args[param.name]
             if value is None:
                 continue
-
-            if param.metadata_field == "filters":
-                parsed_val = str(value).replace("'", "")
-                parsed_val_as_json = json.loads(parsed_val)
-                validated_args[param.name] = parsed_val_as_json
-                continue
             
             if param.constrained_values:
                 ArgumentValidator._validate_constraints(param.name, value, param.constrained_values, param.is_multi)

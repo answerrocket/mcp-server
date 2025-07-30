@@ -31,10 +31,7 @@ class SkillParameter:
         is_multi = param_dict['is_multi']
 
         metadata_field = param_dict['metadata_field']
-        # other filters is presented with an is_multi value of false, because it is just a string
-        # but we have to provide it as a list of strings for it to work nicely with Claude once it turns the string representation back into a list
-        if metadata_field == "filters":
-            is_multi = True
+
         type_hint = List[str] if is_multi else str
 
         description = param_dict['llm_description'] or param_dict['description'] or f"Parameter {param_name}"
