@@ -1,4 +1,4 @@
-"""Extended FastMCP with starlette-context middleware support. We do this because the token verifier must point to the right place."""
+"""Monkeypatched version of FastMCP with starlette-context middleware support. We do this because the token verifier must point to the right place."""
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -25,7 +25,20 @@ class FastMCPExtended(FastMCP):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.settings.streamable_http_path = "/mcp/agent/{copilot_id:uuid}/"
+        
+        # HACK: There's literally no better way to set the capabilities of the MCP server. Crazy.
+        self._mcp_server.notification_options.tools_changed = True
+        self._original_create_initialization_options = self._mcp_server.create_initialization_options
+        self._mcp_server.create_initialization_options = self._create_initialization_options_with_notifications
+        
+    
+    def _create_initialization_options_with_notifications(self, *args, **kwargs):
+        """Create initialization options that include our notification settings."""
+        return self._original_create_initialization_options(
+            notification_options=self._mcp_server.notification_options,
+            *args,
+            **kwargs
+        )
     
     def _add_context_middleware(self, middleware_list: list[Middleware]) -> list[Middleware]:
         """Add starlette-context middleware to the middleware list."""

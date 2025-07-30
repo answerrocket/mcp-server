@@ -20,7 +20,7 @@ class RemoteMode(BaseMode):
         
         # Create MCP server with OAuth and support for our multi-tenant architecture
         # The MCP server will accept connections at /mcp/agent/{copilot_id}
-        return FastMCPExtended(
+        mcp_server = FastMCPExtended(
             "AnswerRocket MCP Server",
             token_verifier=token_verifier,
             auth=AuthSettings(
@@ -35,4 +35,7 @@ class RemoteMode(BaseMode):
             host=self.config.host,
             port=self.config.port,
         )
-    
+        
+        mcp_server.settings.streamable_http_path = "/mcp/agent/{copilot_id:uuid}/"
+        
+        return mcp_server
