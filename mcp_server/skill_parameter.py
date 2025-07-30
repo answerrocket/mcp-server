@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from uuid import UUID
 
+from answer_rocket.config import HydratedReport
+
 
 @dataclass
 class SkillParameter:
@@ -67,16 +69,17 @@ class HydratedSkillConfig:
     scheduling_only: bool
     dataset_id: Optional[UUID]
     parameters: List[SkillParameter]
+    full_report: HydratedReport
     
     @classmethod
-    def from_hydrated_report(cls, report_dict: Dict[str, Any]) -> Optional['HydratedSkillConfig']:
+    def from_hydrated_report(cls, report: HydratedReport) -> Optional['HydratedSkillConfig']:
         """Create HydratedSkillConfig from hydrated report."""
         try:
-            copilot_skill_id = report_dict['copilot_skill_id']
-            name = report_dict['name']
-            tool_description = report_dict['tool_description']
-            detailed_description = report_dict['detailed_description']
-            scheduling_only = report_dict['scheduling_only']
+            copilot_skill_id = report.copilot_skill_id
+            name = report.name
+            tool_description = report.tool_description
+            detailed_description = report.detailed_description
+            scheduling_only = report.scheduling_only
             
             # Skip scheduling-only skills
             if scheduling_only:
@@ -88,15 +91,15 @@ class HydratedSkillConfig:
             
             # Parse dataset ID
             dataset_id = None
-            if report_dict['dataset_id']:
+            if report.dataset_id:
                 try:
-                    dataset_id = UUID(str(report_dict['dataset_id']))
+                    dataset_id = UUID(str(report.dataset_id))
                 except (ValueError, TypeError):
                     pass
             
             # Process parameters
             parameters = []
-            param_list = report_dict['parameters']
+            param_list = report.parameters
 
             for param_dict in param_list:
                 skill_param = SkillParameter.from_hydrated_parameter(param_dict)
@@ -111,7 +114,8 @@ class HydratedSkillConfig:
                 tool_name=tool_name,
                 scheduling_only=scheduling_only,
                 dataset_id=dataset_id,
-                parameters=parameters
+                parameters=parameters,
+                full_report=report
             )
         except Exception as e:
             import logging
