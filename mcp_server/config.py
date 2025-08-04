@@ -20,6 +20,9 @@ class ServerConfig:
     ar_token: Optional[str] = None
     copilot_id: Optional[str] = None
     
+    # Hardcoded authorization server URL
+    HARDCODED_AUTH_SERVER_URL: str = "https://maxai.dev.answerrocket.com"
+    
     @classmethod
     def from_environment(cls) -> 'ServerConfig':
         """Create configuration from environment variables."""

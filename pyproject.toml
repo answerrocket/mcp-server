@@ -5,7 +5,7 @@ readme = "README.md"
 requires-python = ">=3.10.7"
 dynamic = ["version"]
 dependencies = [
-    "answerrocket-client>=0.2.67",
+    "answerrocket-client>=0.2.69",
     "mcp>=1.10.1",
     "starlette-context>=0.4.0",
     "pyhumps>=3.8.0"

@@ -30,6 +30,7 @@ class FastMCPExtended(FastMCP):
         self._mcp_server.notification_options.tools_changed = True
         self._original_create_initialization_options = self._mcp_server.create_initialization_options
         self._mcp_server.create_initialization_options = self._create_initialization_options_with_notifications
+        self.settings.stateless_http = True
         
     
     def _create_initialization_options_with_notifications(self, *args, **kwargs):

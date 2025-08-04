@@ -28,9 +28,14 @@ class IntrospectionTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         """Verify token via introspection endpoint."""
         import httpx
+        from mcp_server.config import ServerConfig
         
+        # Use hardcoded auth server URL instead of dynamic base_url
+        auth_server_url = ServerConfig.HARDCODED_AUTH_SERVER_URL.rstrip("/")
+        introspection_endpoint = auth_server_url + "/api/oauth2/introspect"
+        
+        # For resource validation, still use the original base_url context
         base_url = context.get("base_url", "").rstrip("/")
-        introspection_endpoint = base_url + "/api/oauth2/introspect"
         server_url = base_url
         resource_url = base_url
         
@@ -39,14 +44,27 @@ class IntrospectionTokenVerifier(TokenVerifier):
             logger.warning(f"Rejecting introspection endpoint with unsafe scheme: {introspection_endpoint}")
             return None
 
-        # Configure secure HTTP client
-        timeout = httpx.Timeout(10.0, connect=5.0)
-        limits = httpx.Limits(max_connections=10, max_keepalive_connections=5)
+        timeout = httpx.Timeout(
+            connect=10,    # Connection timeout
+            read=10.0,      # Read timeout
+            write=5.0,      # Write timeout
+            pool=2.0        # Pool connection timeout
+        )
+
+        limits = httpx.Limits(
+            max_connections=20,           # Increased from 10
+            max_keepalive_connections=10, # Increased from 5
+            keepalive_expiry=30.0,       # Keep connections alive for 30s
+        )
 
         async with httpx.AsyncClient(
             timeout=timeout,
             limits=limits,
             verify=True,  # Enforce SSL verification
+            headers={
+                "User-Agent": "MCP-Server/1.0",
+                "Accept": "application/json"
+            }
         ) as client:
             try:
                 response = await client.post(

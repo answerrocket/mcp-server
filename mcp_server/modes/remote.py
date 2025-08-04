@@ -24,11 +24,11 @@ class RemoteMode(BaseMode):
             "AnswerRocket MCP Server",
             token_verifier=token_verifier,
             auth=AuthSettings(
-                issuer_url=AnyHttpUrl("http://localhost"), # Placeholder - real URLs come from request context
+                issuer_url=AnyHttpUrl("https://maxai.dev.answerrocket.com"), # Placeholder - real URLs come from request context
                 # I have verified that removing the issuer_url doesn't have any security implications
                 # It only is responsible for creating the /.well-known/oauth-protected-resource which we don't use
                 required_scopes=['read:copilots', 'read:copilotSkills', 'execute:copilotSkills', 'ping'],
-                resource_server_url=None
+                resource_server_url="http://0.0.0.0:9090"
                 # I have verified that the resource_server_url doesn't have any security implications
                 # It only is responsible for creating the /.well-known/oauth-protected-resource which we don't use
             ),

@@ -102,7 +102,8 @@ class ToolRegistry:
 
         if context and not self.ar_url:
             # remote mode
-            ar_url = str(context.request_context.request.base_url).rstrip("/")
+            #ar_url = str(context.request_context.request.base_url).rstrip("/")
+            ar_url = "https://maxai.dev.answerrocket.com"
             client = ClientManager.create_client_from_context(context, ar_url)
         else:
             # local mode

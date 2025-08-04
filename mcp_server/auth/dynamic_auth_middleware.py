@@ -26,7 +26,9 @@ class DynamicRequireAuthMiddleware(RequireAuthMiddleware):
         super().__init__(app, required_scopes, resource_metadata_url=None)
 
     def _get_dynamic_resource_metadata_url(self) -> str | None:
-        """Get the resource metadata URL dynamically from starlette-context."""
+        """Get the resource metadata URL using hardcoded auth server URL."""
+        from mcp_server.config import ServerConfig
+        
         try:
             base_url = context.get("base_url")
             if base_url:
