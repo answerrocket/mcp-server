@@ -1,10 +1,15 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+#  Defense-in-depth for glibc CVE-2025-4802:
+#    - Ensure no static setuid binaries exist; containers generally don't need setuid.
+#      (Safe for most app images; omit if you truly need setuid.)
+RUN set -eux; \
+find / -xdev -type f -perm -4000 -print -exec chmod a-s {} + || true
+
+# Upgrade pip and setuptools to latest secure versions
+RUN python -m pip install --upgrade 'pip>=24.2' 'setuptools>=78.1.1' wheel
 
 COPY pyproject.toml ./
 COPY mcp_server/ ./mcp_server/
