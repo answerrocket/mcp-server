@@ -18,13 +18,14 @@ class SkillService:
                 copilot_id=copilot_id,
                 load_all_skills=load_all_skills
             )
-            
-            if not hydrated_reports:
+
+            reports = hydrated_reports.get("reports")
+            if not reports:
                 logging.warning(f"No hydrated reports found for copilot {copilot_id}")
                 return []
             
             skill_configs = []
-            for report in hydrated_reports:
+            for report in reports:
                 skill_config = HydratedSkillConfig.from_hydrated_report(report)
                 if skill_config:
                     skill_configs.append(skill_config)

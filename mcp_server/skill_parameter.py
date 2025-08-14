@@ -4,8 +4,6 @@ from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from uuid import UUID
 
-from answer_rocket.config import HydratedReport
-
 
 @dataclass
 class SkillParameter:
@@ -66,17 +64,17 @@ class HydratedSkillConfig:
     scheduling_only: bool
     dataset_id: Optional[UUID]
     parameters: List[SkillParameter]
-    full_report: HydratedReport
+    full_report: dict
     
     @classmethod
-    def from_hydrated_report(cls, report: HydratedReport) -> Optional['HydratedSkillConfig']:
+    def from_hydrated_report(cls, report: dict) -> Optional['HydratedSkillConfig']:
         """Create HydratedSkillConfig from hydrated report."""
         try:
-            copilot_skill_id = report.copilot_skill_id
-            name = report.name
-            tool_description = report.tool_description
-            detailed_description = report.detailed_description
-            scheduling_only = report.scheduling_only
+            copilot_skill_id = report["copilot_skill_id"]
+            name = report["name"]
+            tool_description = report["tool_description"]
+            detailed_description = report["detailed_description"]
+            scheduling_only = report["scheduling_only"]
             
             # Skip scheduling-only skills
             if scheduling_only:
@@ -88,15 +86,15 @@ class HydratedSkillConfig:
             
             # Parse dataset ID
             dataset_id = None
-            if report.dataset_id:
+            if report["dataset_id"]:
                 try:
-                    dataset_id = UUID(str(report.dataset_id))
+                    dataset_id = UUID(str(report["dataset_id"]))
                 except (ValueError, TypeError):
                     pass
             
             # Process parameters
             parameters = []
-            param_list = report.parameters
+            param_list = report["parameters"]
 
             for param_dict in param_list:
                 skill_param = SkillParameter.from_hydrated_parameter(param_dict)

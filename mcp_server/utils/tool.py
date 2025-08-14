@@ -5,7 +5,6 @@ from typing import Callable, Optional, Dict, Any, Annotated
 from mcp.types import ToolAnnotations
 from mcp.server.fastmcp.server import Context
 from pydantic import Field
-from humps import decamelize
 
 from mcp_server.skill_parameter import HydratedSkillConfig
 from .context import RequestContextExtractor
@@ -51,8 +50,7 @@ class ToolFactory:
                 
                 await context.info(f"Executing skill: {skill_config.skill_name}")
 
-                snake_cased_report = decamelize(skill_config.full_report.__json_data__)
-                skill_result = client.skill.run(actual_copilot_id, skill_config.skill_name, processed_params, validate_parameters=True, tool_definition=snake_cased_report)
+                skill_result = client.skill.run(actual_copilot_id, skill_config.skill_name, processed_params, validate_parameters=True, tool_definition=skill_config.full_report)
                 
                 if not skill_result.success:
                     error_msg = f"Skill execution failed: {skill_result.error}"
@@ -61,7 +59,7 @@ class ToolFactory:
                 
                 await context.info("Skill executed successfully")
                 if skill_result.data:
-                    return skill_result.data.get("final_message", "No message returned")
+                    return skill_result.data.get("final_message", skill_result.data.get("payload", "No message returned"))
                 return "No data returned from skill"
                 
             except ValueError as e:
