@@ -77,7 +77,7 @@ class ToolRegistry:
             
             await self._register_dynamic_tools(copilot_id)
 
-            self.register_refresh_tool()
+            #self.register_refresh_tool()
             
             return await self._original_list_tools()
         

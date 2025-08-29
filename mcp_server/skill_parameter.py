@@ -66,7 +66,6 @@ class HydratedSkillConfig:
     scheduling_only: bool
     dataset_id: Optional[UUID]
     parameters: List[SkillParameter]
-    full_report: HydratedReport
     
     @classmethod
     def from_hydrated_report(cls, report: HydratedReport) -> Optional['HydratedSkillConfig']:
@@ -112,7 +111,6 @@ class HydratedSkillConfig:
                 scheduling_only=scheduling_only,
                 dataset_id=dataset_id,
                 parameters=parameters,
-                full_report=report
             )
         except Exception as e:
             import logging
