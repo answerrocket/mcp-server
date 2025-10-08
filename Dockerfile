@@ -8,6 +8,13 @@ WORKDIR /app
 RUN set -eux; \
 find / -xdev -type f -perm -4000 -print -exec chmod a-s {} + || true
 
+# Fix CVE-2025-58050: Upgrade pcre2 to version 10.46+
+# Fix CVE-2025-9230: Upgrade OpenSSL to version 3.5.4+
+RUN apt-get update && \
+    apt-get upgrade -y libpcre2-8-0 openssl libssl3t64 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Upgrade pip and setuptools to latest secure versions
 RUN python -m pip install --upgrade 'pip>=24.2' 'setuptools>=78.1.1' wheel
 
