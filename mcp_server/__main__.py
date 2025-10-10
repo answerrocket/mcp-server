@@ -8,7 +8,10 @@ from mcp_server.config import ServerConfig
 from mcp.server import FastMCP
 
 def setup_logging():
+        
     logging.basicConfig(
+        filename="./logs/mcp_server.log",
+        filemode="w",
         level=logging.INFO,
         format='[%(asctime)s] %(levelname)s: %(message)s'
     )
