@@ -8,6 +8,7 @@ dependencies = [
     "answerrocket-client==0.2.78",
     "mcp==1.12.3",
     "starlette-context==0.4.0",
+    "PyYAML",
 ]
 
 [build-system]
