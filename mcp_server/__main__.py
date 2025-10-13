@@ -2,13 +2,14 @@
 
 import sys
 import logging
+import logging.config
 from typing import cast, Literal
 from mcp_server.modes import LocalMode, RemoteMode
 from mcp_server.config import ServerConfig
 from mcp.server import FastMCP
 import yaml
 
-DEFAULT_LOGGING_CONFIG_PATH = "./logging.yaml"
+DEFAULT_LOGGING_CONFIG_PATH = "mcp_server/logging.yaml"
 
 def setup_logging():
     
