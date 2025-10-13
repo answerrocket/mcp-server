@@ -8,3 +8,5 @@ services:
     container_name: mcp-server
     restart: unless-stopped
     network_mode: "host"
+    volumes:
+      - ./volumes/logs:/app/logs

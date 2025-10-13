@@ -2,16 +2,28 @@
 
 import sys
 import logging
+import logging.config
 from typing import cast, Literal
 from mcp_server.modes import LocalMode, RemoteMode
 from mcp_server.config import ServerConfig
 from mcp.server import FastMCP
+import yaml
+
+DEFAULT_LOGGING_CONFIG_PATH = "mcp_server/logging.yaml"
 
 def setup_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(asctime)s] %(levelname)s: %(message)s'
-    )
+    
+    import os.path
+
+    if not os.path.exists(DEFAULT_LOGGING_CONFIG_PATH):
+        logging.getLogger().debug("Unable to configure AR logging: config file not found (%s)", DEFAULT_LOGGING_CONFIG_PATH)
+        return
+        
+    try:
+        with open(DEFAULT_LOGGING_CONFIG_PATH, "r") as loggingConfigYaml:
+            logging.config.dictConfig(yaml.safe_load(loggingConfigYaml))
+    except Exception as e:
+        logging.getLogger().error("Unable to configure AR logging: %s", e)
 
 
 def main():
