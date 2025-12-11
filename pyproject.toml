@@ -6,12 +6,13 @@ requires-python = ">=3.10.7"
 dynamic = ["version"]
 dependencies = [
     "answerrocket-client==0.2.78",
-    "mcp==1.12.3",
+    "mcp>=1.23.0",
+    "starlette>=0.49.1",
     "starlette-context==0.4.0",
 ]
 
 [build-system]
-requires = ["setuptools>=78.1.1"]
+requires = ["pip>=25.3", "setuptools>=78.1.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
