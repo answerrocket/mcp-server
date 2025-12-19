@@ -16,7 +16,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and setuptools to latest secure versions
-RUN python -m pip install --upgrade 'pip>=24.2' 'setuptools>=78.1.1' wheel
+# Fix CVE-2025-8869: Upgrade pip to 25.3+ (path traversal in tar extraction)
+RUN python -m pip install --upgrade 'pip>=25.3' 'setuptools>=78.1.1' wheel
 
 COPY pyproject.toml ./
 COPY mcp_server/ ./mcp_server/
