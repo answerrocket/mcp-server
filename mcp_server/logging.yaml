@@ -1,0 +1,36 @@
+---
+version: 1
+disable_existing_loggers: false
+
+formatters:
+
+  withdate:
+    format: '[%(asctime)s] %(levelname)s: %(message)s'
+
+handlers:
+
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: withdate
+    stream: ext://sys.stdout
+
+  file:
+    # The values below are popped from this dictionary and
+    # used to create the handler, set the handler's level and
+    # its formatter.
+    class: logging.handlers.TimedRotatingFileHandler
+    level: DEBUG
+    formatter: withdate
+
+    # The values below are passed to the handler creator callable
+    # as keyword arguments.
+    filename: "./logs/mcp_server_test.log"
+    when: D  # daily
+    interval: 1 # every 1 day
+    backupCount: 0  # keep all forever
+    utc: true  # UTC times
+
+root:
+  handlers: [ console, file ]
+  level: INFO
