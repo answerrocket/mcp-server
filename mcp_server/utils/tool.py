@@ -50,10 +50,10 @@ class ToolFactory:
                 
                 await context.info(f"Executing skill: {skill_config.skill_name}")
 
+                # Don't pass validate_parameters: older Max workers reject the kwarg.
                 skill_result = client.skill.run(actual_copilot_id,
                                                 skill_config.skill_name,
-                                                processed_params,
-                                                validate_parameters=True)
+                                                processed_params)
                 
                 if not skill_result.success:
                     error_msg = f"Skill execution failed: {skill_result.error}"

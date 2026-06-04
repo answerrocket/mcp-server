@@ -19,6 +19,10 @@ class ServerConfig:
     # Mode-specific fields
     ar_token: Optional[str] = None
     copilot_id: Optional[str] = None
+
+    # Hosts the server may send bearer tokens to for introspection (empty = unenforced).
+    allowed_introspection_hosts: tuple = ()
+    forwarded_allow_ips: str = "*"
     
     @classmethod
     def from_environment(cls) -> 'ServerConfig':
@@ -36,12 +40,18 @@ class ServerConfig:
         if transport not in ["stdio", "streamable-http"]:
             raise ValueError(f"Invalid MCP_TRANSPORT: {transport}. Must be 'stdio' or 'streamable-http'")
         
+        allowed_hosts = tuple(
+            h.strip() for h in os.getenv("MCP_ALLOWED_INTROSPECTION_HOSTS", "").split(",") if h.strip()
+        )
+
         config = cls(
             mode=mode,
             ar_url=ar_url,
             host=os.getenv("MCP_HOST", "localhost"),
             port=int(os.getenv("MCP_PORT", "9090")),
             transport=transport,
+            allowed_introspection_hosts=allowed_hosts,
+            forwarded_allow_ips=os.getenv("MCP_FORWARDED_ALLOW_IPS", "*"),
         )
         
         if mode == "local":
