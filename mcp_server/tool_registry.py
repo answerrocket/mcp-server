@@ -28,11 +28,6 @@ class ToolRegistry:
         self.ar_token = ar_token
         self.copilot_id = copilot_id
         self._original_list_tools = None
-        # Serialize the shared-tool-store mutation so concurrent list_tools() calls don't race.
-        self._registration_lock = asyncio.Lock()
-        # Short-lived per-copilot skill cache: copilot_id -> (expires_at, skill_configs).
-        self._skill_cache: dict = {}
-        self._skill_cache_ttl = 30.0
     
     def register_skills(self, skill_configs: List[HydratedSkillConfig]):
         """Register multiple skills as MCP tools."""
@@ -68,18 +63,13 @@ class ToolRegistry:
         self._original_list_tools = self.mcp.list_tools
         
         async def dynamic_list_tools():
+            """Dynamically register tools based on context or static copilot ID."""
             if not self.mcp:
                 return []
-
-            # Resolve the copilot BEFORE taking the lock (it reads request-scoped context).
-            copilot_id = self._resolve_copilot_id()
-            return await self._locked_list_tools(copilot_id)
-
-        self.mcp._mcp_server.list_tools()(dynamic_list_tools)
-
-    async def _locked_list_tools(self, copilot_id: Optional[str]):
-        async with self._registration_lock:
+            
             self.clear_tools()
+            
+            copilot_id = self._resolve_copilot_id()
             
             if not copilot_id:
                 logging.error("No copilot_id available for tool registration")
@@ -90,6 +80,8 @@ class ToolRegistry:
             #self.register_refresh_tool()
             
             return await self._original_list_tools()
+        
+        self.mcp._mcp_server.list_tools()(dynamic_list_tools)
     
     def _resolve_copilot_id(self) -> Optional[str]:
         """Resolve copilot ID from request context or static configuration."""
@@ -123,17 +115,15 @@ class ToolRegistry:
         if not client:
             logging.error("Failed to create AnswerRocket client")
             return
-
-        skill_configs = self._get_skill_configs(client, copilot_id)
-
+        
+        skill_configs = SkillService.fetch_hydrated_reports(client, copilot_id)
+        
         if skill_configs:
-            # Bind the static copilot id (None in remote mode) so tools resolve their
-            # copilot from the request context at call time, not whoever registered them.
             temp_registry = ToolRegistry(
-                mcp=self.mcp,
+                mcp=self.mcp, 
                 ar_url=ar_url,
                 ar_token=self.ar_token,
-                copilot_id=self.copilot_id,
+                copilot_id=copilot_id,
             )
             temp_registry.register_skills(skill_configs)
             
@@ -141,19 +131,6 @@ class ToolRegistry:
             logging.info(f"Registered {len(skill_configs)} skills for copilot {copilot_id}")
         else:
             logging.warning(f"No skills found for copilot {copilot_id}")
-
-    def _get_skill_configs(self, client, copilot_id: str) -> List[HydratedSkillConfig]:
-        """Fetch a copilot's skill configs via the cache (caller holds the lock)."""
-        import time
-        cached = self._skill_cache.get(copilot_id)
-        if cached and cached[0] > time.monotonic():
-            logging.info(f"Using cached skills for copilot {copilot_id}")
-            return cached[1]
-
-        skill_configs = SkillService.fetch_hydrated_reports(client, copilot_id)
-        if skill_configs:
-            self._skill_cache[copilot_id] = (time.monotonic() + self._skill_cache_ttl, skill_configs)
-        return skill_configs
     
 
     async def send_tool_list_changed(self):

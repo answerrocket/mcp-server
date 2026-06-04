@@ -22,11 +22,8 @@ class IntrospectionTokenVerifier(TokenVerifier):
     def __init__(
         self,
         validate_resource: bool = False,
-        allowed_hosts: tuple = (),
     ):
         self.validate_resource = validate_resource
-        # Allowlist of hosts we may send the token to (empty = unenforced, warns).
-        self.allowed_hosts = tuple(allowed_hosts)
 
     async def verify_token(self, token: str) -> AccessToken | None:
         """Verify token via introspection endpoint."""
@@ -41,21 +38,6 @@ class IntrospectionTokenVerifier(TokenVerifier):
         if not introspection_endpoint.startswith(("https://", "http://localhost", "http://127.0.0.1")) and not "local.answerrocket.com" in introspection_endpoint:
             logger.warning(f"Rejecting introspection endpoint with unsafe scheme: {introspection_endpoint}")
             return None
-
-        # Enforce the host allowlist before sending the token (base_url is client-influenced).
-        from urllib.parse import urlparse
-        host = urlparse(base_url).netloc
-        if self.allowed_hosts:
-            if host not in self.allowed_hosts:
-                logger.warning(
-                    f"Rejecting introspection: host {host!r} not in allowlist {self.allowed_hosts}"
-                )
-                return None
-        else:
-            logger.warning(
-                "MCP_ALLOWED_INTROSPECTION_HOSTS is not set; introspecting against "
-                f"request-derived host {host!r} without an allowlist."
-            )
 
         # Configure secure HTTP client
         timeout = httpx.Timeout(10.0, connect=5.0)

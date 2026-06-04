@@ -43,11 +43,8 @@ class SkillParameter:
             else:
                 constrained_values = None
 
-        try:
-            required = bool(param_dict['is_required'])
-        except (KeyError, TypeError):
-            required = False
-
+        required = False
+        
         return cls(
             name=param_name,
             type_hint=type_hint,
