@@ -16,6 +16,7 @@ class RemoteMode(BaseMode):
         """Create MCP server for remote mode with OAuth."""
         token_verifier = IntrospectionTokenVerifier(
             validate_resource=True,
+            allowed_hosts=self.config.allowed_introspection_hosts,
         )
         
         # Create MCP server with OAuth and support for our multi-tenant architecture
