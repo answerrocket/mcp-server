@@ -17,12 +17,14 @@ RUN apt-get update && \
 
 # Upgrade pip and setuptools to latest secure versions
 # Fix CVE-2025-8869: Upgrade pip to 25.3+ (path traversal in tar extraction)
-RUN python -m pip install --upgrade 'pip>=25.3' 'setuptools>=78.1.1' wheel
+RUN python -m pip install --upgrade 'pip>=26.0' 'setuptools>=78.1.1' wheel
 
 COPY pyproject.toml ./
 COPY mcp_server/ ./mcp_server/
 
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e . && \
+    # Pin CVE-fixed versions for transitive deps that Inspector scans
+    pip install --no-cache-dir "PyJWT>=2.12.1" "jaraco.context>=6.1.0" "python-multipart>=0.0.22"
 
 ENV MCP_MODE=remote
 ENV MCP_HOST=0.0.0.0
