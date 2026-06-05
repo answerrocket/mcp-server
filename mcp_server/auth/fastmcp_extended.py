@@ -22,24 +22,7 @@ class BaseURLPlugin(Plugin):
 
 class FastMCPExtended(FastMCP):
     """Extended FastMCP that includes starlette-context middleware."""
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # HACK: There's literally no better way to set the capabilities of the MCP server. Crazy.
-        self._mcp_server.notification_options.tools_changed = True
-        self._original_create_initialization_options = self._mcp_server.create_initialization_options
-        self._mcp_server.create_initialization_options = self._create_initialization_options_with_notifications
-        
-    
-    def _create_initialization_options_with_notifications(self, *args, **kwargs):
-        """Create initialization options that include our notification settings."""
-        return self._original_create_initialization_options(
-            notification_options=self._mcp_server.notification_options,
-            *args,
-            **kwargs
-        )
-    
+
     def _add_context_middleware(self, middleware_list: list[Middleware]) -> list[Middleware]:
         """Add starlette-context middleware to the middleware list."""
         context_middleware_instance = Middleware(
@@ -116,13 +99,14 @@ class FastMCPExtended(FastMCP):
 
         starlette_app = self.streamable_http_app()
 
+        import os
         config = uvicorn.Config(
             app=starlette_app,
             host=self.settings.host,
             port=self.settings.port,
             log_level=self.settings.log_level.lower(),
             proxy_headers=True,
-            forwarded_allow_ips="*"
+            forwarded_allow_ips=os.getenv("MCP_FORWARDED_ALLOW_IPS", "*"),
         )
         server = uvicorn.Server(config)
         await server.serve()
